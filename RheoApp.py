@@ -125,6 +125,30 @@ def to_excel(summary_df, shift_df, crossover_df):
             writer.sheets[sheetname].set_column('A:C', 20)
             
     return output.getvalue()
+def cross_model(omega, eta_0, tau, n):
+    return eta_0 / (1 + (tau * omega)**n)
+
+def calculate_rheo_metrics(m_df):
+    if m_df.empty:
+        return np.nan, np.nan, [0, 0, 0], False
+    
+    # Voorbereiding data voor fit
+    w = m_df['w_s'].values
+    eta_complex = m_df['eta_s'].values
+    
+    # Initiële schatting: eta0 is vaak de hoogste viscositeit, tau ~ 1/omega_crossover
+    p0 = [eta_complex.max(), 0.1, 0.8]
+    
+    try:
+        popt, _ = curve_fit(cross_model, w, eta_complex, p0=p0, maxfev=5000)
+        eta0 = popt[0]
+        # Schatting G_N0: Waarde van G' waar tan delta minimaal is (plateau)
+        # Dit is een versimpeling voor TPU
+        gn0 = m_df.loc[m_df['Gpp']/m_df['Gp'] == (m_df['Gpp']/m_df['Gp']).min(), 'Gp'].values[0]
+        return eta0, gn0, popt, True
+    except:
+        return np.nan, np.nan, p0, False
+
 
 # --- SIDEBAR ---
 st.sidebar.title("Control Panel")
@@ -183,6 +207,14 @@ if uploaded_file:
                 0.1, 
                 key=f"{t}_{st.session_state.reset_id}"
             )
+        # Genereer kleurenlijst op basis van geselecteerde optie
+        import matplotlib.cm as cm
+        cmap = cm.get_cmap(cmap_opt)
+        colors = [cmap(i) for i in np.linspace(0, 1, len(selected_temps))]
+
+        # Initialiseer lege dataframes voor export/dashboard (voorkomt crashes)
+        summ_df = pd.DataFrame(columns=['Parameter', 'Waarde', 'Eenheid'])
+        co_df = pd.DataFrame(columns=['T (°C)', 'Crossover ω (rad/s)', 'G=G\'\' (Pa)'])
 
         # --- BEREKENINGEN (NU OP DE JUISTE PLEK - NA VARIABELE DEFINITIE) ---
         t_k_global = np.array([t + 273.15 for t in selected_temps])
@@ -222,6 +254,7 @@ if uploaded_file:
         # --- 2. BEREKEN METRICS (Eén keer uitvoeren) ---
         eta0, gn0, fit_params, fit_success = calculate_rheo_metrics(m_df)
         
+        
         # Bereken Terminal Slope (G') robuust
         # We pakken de laagste 20% van de frequentie-range voor de vloeizone
         term_idx = int(len(m_df) * 0.2)
@@ -231,6 +264,14 @@ if uploaded_file:
             slope_term = np.polyfit(log_w_term, log_gp_term, 1)[0]
         else:
             slope_term = np.nan
+
+        # Vul de summary tabel voor het dashboard
+        summ_df = pd.DataFrame([
+            {'Parameter': 'Activatie Energie (Ea)', 'Waarde': f"{ea_final:.2f}", 'Eenheid': 'kJ/mol'},
+            {'Parameter': 'Zero Shear Viscosity', 'Waarde': f"{eta0:.2e}", 'Eenheid': 'Pa·s'},
+            {'Parameter': 'WLF C1', 'Waarde': f"{wlf_c1:.2f}", 'Eenheid': '-'},
+            {'Parameter': 'Terminal Slope G\'', 'Waarde': f"{slope_term:.2f}", 'Eenheid': '-'}
+        ])
 
         # --- 3. TABS STARTEN ---
         st.subheader(f"Sample: {sample_name}")
