@@ -124,8 +124,8 @@ def to_excel(summary_df, shift_df, crossover_df):
     return output.getvalue()
 
 # --- SIDEBAR ---
-st.sidebar.title("🧪 Rheo-Control Panel")
-uploaded_file = st.sidebar.file_uploader("Upload Anton Paar CSV/TXT", type=['csv', 'txt'])
+st.sidebar.title("Control Panel")
+uploaded_file = st.sidebar.file_uploader("Upload frequency sweep CSV/TXT", type=['csv', 'txt'])
 
 if uploaded_file:
     df = load_rheo_data(uploaded_file)
@@ -401,7 +401,7 @@ if uploaded_file:
             )
 
         with tab7:
-            st.header("📊 TPU Expert Dashboard")
+            st.header("📊 Expert Dashboard")
             
             # Kolommen voor metrics
             col_a, col_b, col_c = st.columns(3)
@@ -497,13 +497,13 @@ if uploaded_file:
             st.download_button(
                 label="📥 Download Geformatteerd Excel Rapport",
                 data=excel_data,
-                file_name=f"TPU_Expert_Report_{int(ref_temp)}C.xlsx",
+                file_name=f"RheoApp_{sample_name}_{int(ref_temp)}C.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
     else:
         st.error("❌ Geen data gevonden in het bestand. Controleer het bestandsformaat.")
 else:
-    st.info("👆 Upload een Anton Paar reometer CSV/TXT bestand om te beginnen.")
+    st.info("👆 Upload een frequency sweep CSV/TXT bestand om te beginnen.")
     
     with st.expander("ℹ️ Gebruiksinstructies"):
         st.markdown("""
@@ -518,7 +518,7 @@ else:
         - 📊 **Dashboard**: Overzicht van alle kritieke parameters
         
         **Gebruik:**
-        1. Upload een Anton Paar frequency sweep CSV
+        1. Upload een frequency sweep CSV
         2. Selecteer temperaturen en referentie temperatuur
         3. Klik op "🚀 Auto-Align" of pas handmatig aan
         4. Verken de verschillende tabs voor analyse
