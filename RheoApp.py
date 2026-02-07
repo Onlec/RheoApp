@@ -155,12 +155,44 @@ if uploaded_file:
         st.sidebar.subheader("Fijninstelling (log aT)")
         st.sidebar.caption("Gebruik de pijltjes voor +/- 0.1")
 
+        # --- HANDMATIGE AANPASSINGEN MET KOPPELING ---
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("Fijninstelling (log aT)")
+        st.sidebar.caption("Slider en vakje zijn gekoppeld")
+
         for t in selected_temps:
             st.sidebar.markdown(f"**Temperatuur: {t}°C**")
+            
+            # We gebruiken 2 kolommen voor de slider en het vakje
             c1, c2 = st.sidebar.columns([0.65, 0.35])
-            val_slider = c1.slider(f"S_{t}", -10.0, 10.0, st.session_state.shifts[t], step=0.1, key=f"slide_{t}", label_visibility="collapsed")
-            val_input = c2.number_input(f"N_{t}", -10.0, 10.0, value=val_slider, step=0.1, key=f"num_{t}", label_visibility="collapsed")
-            st.session_state.shifts[t] = val_input
+            
+            # 1. Update de waarde via het numerieke vakje (c2)
+            # De 'key' zorgt ervoor dat Streamlit de staat onthoudt
+            val_input = c2.number_input(
+                "Waarde", 
+                min_value=-15.0, 
+                max_value=15.0, 
+                value=float(st.session_state.shifts[t]), 
+                step=0.1, 
+                format="%.1f",
+                key=f"num_{t}",
+                label_visibility="collapsed"
+            )
+
+            # 2. De slider (c1) koppelen aan diezelfde waarde
+            val_slider = c1.slider(
+                "Slider", 
+                min_value=-15.0, 
+                max_value=15.0, 
+                value=float(val_input), # Hij kijkt naar de input
+                step=0.1,
+                key=f"slide_{t}",
+                label_visibility="collapsed"
+            )
+
+            # Sla de uiteindelijke waarde op in de state voor de grafieken
+            # We geven prioriteit aan de slider omdat die directer reageert
+            st.session_state.shifts[t] = val_slider
 
         # --- VISUALISATIE ---
         st.write("### Ingeladen Data Preview")
