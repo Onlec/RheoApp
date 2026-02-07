@@ -85,7 +85,6 @@ if uploaded_file:
         st.sidebar.header("2. TTS Instellingen")
         selected_temps = st.sidebar.multiselect("Selecteer temperaturen", temps, default=temps)
         
-        # Check of er iets geselecteerd is om fouten te voorkomen
         if not selected_temps:
             st.warning("Selecteer minimaal één temperatuur in de sidebar.")
             st.stop()
@@ -133,7 +132,12 @@ if uploaded_file:
         colors = color_map(np.linspace(0, 0.9, len(selected_temps)))
         
         # --- TABS HOOFDSCHERM ---
-        tab1, tab2, tab3 = st.tabs(["📈 Master Curve", "🧪 Structuur Analyse (vGP)", "🧬 Thermische Analyse (Ea)"])
+        tab1, tab2, tab3, tab4 = st.tabs([
+            "📈 Master Curve", 
+            "🧪 Structuur Analyse (vGP)", 
+            "🧬 Thermische Analyse (Ea)", 
+            "🔬 Geavanceerde Check"
+        ])
 
         with tab1:
             st.subheader(f"Master Curve bij {ref_temp}°C")
@@ -187,24 +191,24 @@ if uploaded_file:
 
         with tab3:
             st.subheader("🧬 Thermische Analyse: Arrhenius & Viscositeit")
-            all_omegas = sorted(df['omega'].unique())
-            target_omega = st.select_slider("Selecteer frequentie voor viscositeitsanalyse (rad/s)", 
-                                           options=all_omegas, value=all_omegas[len(all_omegas)//2])
+            if len(selected_temps) >= 3:
+                all_omegas = sorted(df['omega'].unique())
+                target_omega = st.select_slider("Selecteer frequentie voor viscositeitsanalyse (rad/s)", 
+                                               options=all_omegas, value=all_omegas[len(all_omegas)//2])
 
-            t_kelvin = np.array([t + 273.15 for t in selected_temps])
-            inv_t = 1/t_kelvin
-            log_at = np.array([st.session_state.shifts[t] for t in selected_temps])
-            
-            viscosities = []
-            for t in selected_temps:
-                d_t = df[(df['T_group'] == t)]
-                idx = (d_t['omega'] - target_omega).abs().idxmin()
-                row = d_t.loc[idx]
-                g_star = np.sqrt(row['Gp']**2 + row['Gpp']**2)
-                viscosities.append(np.log10(g_star / row['omega']))
-            log_eta = np.array(viscosities)
+                t_kelvin = np.array([t + 273.15 for t in selected_temps])
+                inv_t = 1/t_kelvin
+                log_at = np.array([st.session_state.shifts[t] for t in selected_temps])
+                
+                viscosities = []
+                for t in selected_temps:
+                    d_t = df[(df['T_group'] == t)]
+                    idx = (d_t['omega'] - target_omega).abs().idxmin()
+                    row = d_t.loc[idx]
+                    g_star = np.sqrt(row['Gp']**2 + row['Gpp']**2)
+                    viscosities.append(np.log10(g_star / row['omega']))
+                log_eta = np.array(viscosities)
 
-            if len(selected_temps) > 2:
                 coeffs_at = np.polyfit(inv_t, log_at, 1)
                 p_at = np.poly1d(coeffs_at)
                 r2_at = 1 - (np.sum((log_at - p_at(inv_t))**2) / np.sum((log_at - np.mean(log_at))**2))
@@ -238,14 +242,70 @@ if uploaded_file:
                     st.metric("Activeringsenergie ($E_a$)", f"{abs(ea):.1f} kJ/mol")
                     st.divider()
                     st.metric("Flow $E_a$ ($\eta^*$)", f"{abs(ea_flow):.1f} kJ/mol")
-                    
-                    if r2_at < 0.98:
-                        st.error("⚠️ Lage fit-kwaliteit.")
-                    else:
-                        st.success("✅ Goede fit.")
+                    if r2_at < 0.98: st.error("⚠️ Lage fit-kwaliteit.")
+                    else: st.success("✅ Goede fit.")
             else:
-                st.warning("Selecteer minimaal 3 temperaturen.")
+                st.warning("Selecteer minimaal 3 temperaturen voor thermische analyse.")
+
+        with tab4:
+            st.subheader("🔬 Geavanceerde Karakterisering")
+            st.write("Gebruik deze plots om te valideren of de TTS wel echt geldig is.")
+            
+            col_han, col_cole = st.columns(2)
+            
+            with col_han:
+                st.markdown("**1. Han Plot ($G'$ vs $G''$)**")
+                fig_han, ax_han = plt.subplots(figsize=(6, 5))
+                for t, color in zip(selected_temps, colors):
+                    data = df[df['T_group'] == t]
+                    ax_han.loglog(data['Gpp'], data['Gp'], 'o', color=color, label=f"{int(t)}°C", markersize=4, alpha=0.7)
+                
+                min_val = min(df['Gp'].min(), df['Gpp'].min())
+                max_val = max(df['Gp'].max(), df['Gpp'].max())
+                ax_han.plot([min_val, max_val], [min_val, max_val], 'k--', alpha=0.4, label="G' = G''")
+                
+                ax_han.set_xlabel("Loss Modulus G'' (Pa)")
+                ax_han.set_ylabel("Storage Modulus G' (Pa)")
+                ax_han.legend(fontsize=8)
+                ax_han.grid(True, which="both", alpha=0.2)
+                st.pyplot(fig_han)
+                st.caption("Samenvallende lijnen bevestigen TTS geldigheid.")
+
+            with col_cole:
+                st.markdown("**2. Cole-Cole Plot ($\eta''$ vs $\eta'$)**")
+                fig_cole, ax_cole = plt.subplots(figsize=(6, 5))
+                for t, color in zip(selected_temps, colors):
+                    data = df[df['T_group'] == t]
+                    eta_prime = data['Gpp'] / data['omega']
+                    eta_double_prime = data['Gp'] / data['omega']
+                    ax_cole.plot(eta_prime, eta_double_prime, 'o-', color=color, markersize=4, label=f"{int(t)}°C")
+                
+                ax_cole.set_xlabel("Dynamic Viscosity η' (Pa·s)")
+                ax_cole.set_ylabel("Out-of-phase Viscosity η'' (Pa·s)")
+                ax_cole.grid(True, alpha=0.2)
+                st.pyplot(fig_cole)
+                st.caption("Een enkele boog duidt op een homogeen relaxatiesysteem.")
+
+            st.divider()
+            st.markdown("**3. Cross-over Punten ($G' = G''$)**")
+            crossover_data = []
+            for t in selected_temps:
+                data = df[df['T_group'] == t].sort_values('omega')
+                diff = (data['Gp'] - data['Gpp']).abs()
+                if diff.min() / data['Gp'].mean() < 0.2:
+                    idx = diff.idxmin()
+                    crossover_data.append({
+                        "Temperatuur (°C)": int(t),
+                        "Crossover ω (rad/s)": round(data.loc[idx, 'omega'], 2),
+                        "Crossover G (Pa)": round(data.loc[idx, 'Gp'], 0)
+                    })
+            
+            if crossover_data:
+                st.table(pd.DataFrame(crossover_data))
+            else:
+                st.info("Geen cross-over punten gevonden in het huidige meetbereik.")
+
     else:
-        st.error("Geen geldige data gevonden.")
+        st.error("Geen geldige data gevonden in het bestand.")
 else:
-    st.info("👋 Upload een Anton Paar CSV om te beginnen.")
+    st.info("👋 Welkom! Upload een Anton Paar CSV om de analyse te starten.")
