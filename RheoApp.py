@@ -195,20 +195,24 @@ if uploaded_file:
         r2_final = float(1 - (np.sum((log_at_global - (slope_g * inv_t_global + intercept_g))**2) / 
                               np.sum((log_at_global - np.mean(log_at_global))**2)))
 
-        # WLF Fit
-        def wlf_model_final(p, t, tr): 
-            return -p[0]*(t-tr) / (p[1] + (t-tr))
         
-        def wlf_err_final(p): 
-            return np.sum((log_at_global - wlf_model_final(p, t_k_global, tr_k_global))**2)
+        # WLF met Tg-hint van Professor
+        def wlf_model(p, t, tr): return -p[0]*(t-tr) / (p[1] + (t-tr))
+        def wlf_err(p): return np.sum((log_at_global - wlf_model(p, t_k_global, tr_k_global))**2)
         
-        res_wlf_final = minimize(wlf_err_final, x0=[17, 50])
-        wlf_c1, wlf_c2 = res_wlf_final.x
+        # Startwaarden aanpassen op basis van Tg
+        c2_init = max(50.0, ref_temp - tg_hint) 
+        res_wlf = minimize(wlf_err, x0=[17.4, c2_init])
+        wlf_c1, wlf_c2 = res_wlf.x
 
         # --- DATA PREP ---
         color_map = plt.get_cmap(cmap_opt)
         colors = color_map(np.linspace(0, 0.9, len(selected_temps)))
         
+        # WLF met Tg-hint van Professor
+        def wlf_model(p, t, tr): return -p[0]*(t-tr) / (p[1] + (t-tr))
+        def wlf_err(p): return np.sum((log_at_global - wlf_model(p, t_k_global, tr_k_global))**2)
+
         # Startwaarden aanpassen op basis van Tg
         c2_init = max(50.0, ref_temp - tg_hint) 
         res_wlf = minimize(wlf_err, x0=[17.4, c2_init])
@@ -306,7 +310,7 @@ if uploaded_file:
                 # WLF fit lijn
                 ax_t.plot(
                     selected_temps, 
-                    wlf_model_final([wlf_c1, wlf_c2], t_k_global, tr_k_global), 
+                    wlf_model([wlf_c1, wlf_c2], t_k_global, tr_k_global), 
                     'b-', 
                     label='WLF Fit', 
                     linewidth=2
@@ -346,7 +350,7 @@ if uploaded_file:
                 st.pyplot(fig_h)
                 st.caption("Gevaar: Als de lijnen spreiden, verandert de morfologie en is TTS ongeldig.")
                 st.markdown('<div class="warning-note"><b>TPU Check:</b> Zie je een opwaartse shift bij hogere temperaturen? Dat duidt op <b>thermal crosslinking</b> (na-reactie van NCO groepen).</div>', unsafe_allow_html=True)
-                
+
             with cv2:
                 st.write("**2. Cole-Cole Plot ($\\eta''$ vs $\\eta'$)**")
                 fig_c, ax_c = plt.subplots()
