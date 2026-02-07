@@ -98,10 +98,15 @@ if uploaded_file:
         
         if 'shifts' not in st.session_state or set(st.session_state.shifts.keys()) != set(temps):
             st.session_state.shifts = {t: 0.0 for t in temps}
-        
+
+        if 'reset_id' not in st.session_state:
+            st.session_state.reset_id = 0
+
         c_auto, c_reset = st.sidebar.columns(2)
         if c_reset.button("🔄 Reset"):
-            for t in temps: st.session_state.shifts[t] = 0.0
+            for t in temps: 
+                st.session_state.shifts[t] = 0.0
+            st.session_state.reset_id += 1  # Verander de ID om sliders te forceren
             st.rerun()
 
         if c_auto.button("🚀 Auto-Align"):
@@ -121,14 +126,15 @@ if uploaded_file:
         st.sidebar.markdown("---")
         st.sidebar.subheader("Handmatige Shift (log aT)")
         
-        # Enkel Sliders, geen extra vakjes
         for t in selected_temps:
+            # De key bevat nu de reset_id (bijv. "slide_110_0")
             st.session_state.shifts[t] = st.sidebar.slider(
                 f"Temperatuur: {int(t)}°C", 
                 -15.0, 15.0, 
                 float(st.session_state.shifts[t]), 
                 step=0.1,
-                format="%.1f"
+                format="%.1f",
+                key=f"slide_{t}_{st.session_state.reset_id}" 
             )
 
         # --- VISUALISATIE ---
