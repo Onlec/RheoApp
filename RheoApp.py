@@ -12,6 +12,58 @@ st.title("🧪 TPU Rheology Master Curve Tool")
 
 # --- FUNCTIE VOOR DATA INLEZEN ---
 def load_rheo_data(file):
+    # 1. Lees het bestand in als tekst om de startregel te vinden
+    try:
+        raw_content = file.getvalue().decode('utf-8').splitlines()
+    except UnicodeDecodeError:
+        raw_content = file.getvalue().decode('latin-1').splitlines()
+    
+    start_row = 0
+    for i, line in enumerate(raw_content):
+        if "Point No." in line:
+            start_row = i
+            break
+    
+    # 2. Lees in met Pandas
+    file.seek(0)
+    try:
+        df = pd.read_csv(file, sep='\t', skiprows=start_row, encoding='utf-8', on_bad_lines='warn')
+    except UnicodeDecodeError:
+        file.seek(0)
+        df = pd.read_csv(file, sep='\t', skiprows=start_row, encoding='latin-1', on_bad_lines='warn')
+
+    # --- CRUCIALE STAP: SCHOON DE KOLOMNAMEN OP ---
+    # Dit verwijdert de verborgen tabs (\t) aan het begin van je kolomnamen
+    df.columns = df.columns.str.strip()
+    
+    # Verwijder kolommen die echt leeg zijn
+    df = df.dropna(axis=1, how='all')
+
+    # 3. Zoek de juiste kolommen (zelfs als ze net iets anders heten)
+    mapping = {}
+    for col in df.columns:
+        if 'Point' in col: mapping[col] = 'Point_No'
+        if 'Temperature' in col: mapping[col] = 'T'
+        if 'Angular Frequency' in col: mapping[col] = 'omega'
+        if 'Storage Modulus' in col: mapping[col] = 'Gp'
+        if 'Loss Modulus' in col: mapping[col] = 'Gpp'
+    
+    df = df.rename(columns=mapping)
+
+    # 4. Filter de eenheden-rij en rommel weg
+    if 'Point_No' in df.columns:
+        df['Point_No'] = pd.to_numeric(df['Point_No'], errors='coerce')
+        df = df.dropna(subset=['Point_No'])
+    
+    # Forceer numerieke waarden
+    for col in ['T', 'omega', 'Gp', 'Gpp']:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+    
+    # Verwijder rijen die geen meetdata bevatten
+    df = df.dropna(subset=['omega', 'Gp', 'T'])
+    
+    return df
     # 1. Lees het bestand eerst in als tekst om de juiste startregel te vinden
     try:
         content = file.getvalue().decode('utf-8').splitlines()
