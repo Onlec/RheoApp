@@ -66,10 +66,19 @@ def load_rheo_data(file):
 
 def to_excel(summary_df, shift_df, crossover_df):
     output = BytesIO()
+    # We converteren alles naar standaard Python types om de ValueError te voorkomen
+    summary_df = summary_df.copy()
+    summary_df['Waarde'] = summary_df['Waarde'].apply(lambda x: float(x) if isinstance(x, (np.float64, np.float32, np.ndarray)) else str(x))
+    
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         summary_df.to_excel(writer, sheet_name='Summary', index=False)
         shift_df.to_excel(writer, sheet_name='ShiftFactors', index=False)
         crossover_df.to_excel(writer, sheet_name='Crossovers', index=False)
+        
+        # Kleine extra touch: kolombreedte aanpassen
+        for sheetname in writer.sheets:
+            writer.sheets[sheetname].set_column('A:C', 20)
+            
     return output.getvalue()
 
 # --- SIDEBAR ---
@@ -229,39 +238,37 @@ if uploaded_file:
             csv = pd.DataFrame({'omega_shifted': w_new, 'eta_complex': eta_new}).to_csv(index=False).encode('utf-8')
             st.download_button("Download Smooth CSV", csv, "mastercurve.csv")
 
-        with tab6:
-            st.header("📊 TPU Expert Dashboard")
-            
-            # Crossover berekening
-            co_data = []
-            for t in selected_temps:
-                d = df[df['T_group'] == t].sort_values('omega')
-                if len(d) > 3:
-                    try:
-                        f_diff = interp1d(np.log10(d['omega']), np.log10(d['Gp']) - np.log10(d['Gpp']), bounds_error=False)
-                        w_range = np.logspace(np.log10(d['omega'].min()), np.log10(d['omega'].max()), 500)
-                        idx = np.nanargmin(np.abs(f_diff(np.log10(w_range))))
-                        w_co = w_range[idx]
-                        co_data.append({"T_C": int(t), "w_co": round(w_co, 2), "Lambda_s": round(1/w_co, 4)})
-                    except: pass
-            co_df = pd.DataFrame(co_data)
-            
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Flow Activation (Ea)", f"{ea:.1f} kJ/mol")
-            if not co_df.empty:
-                c2.metric("Max Relaxatietijd", f"{co_df['Lambda_s'].max():.2e} s")
-            c3.metric("TTS Fit (R²)", f"{1 - (np.sum((log_at-(slope*inv_t+intercept))**2)/np.sum((log_at-np.mean(log_at))**2)):.3f}")
-            
-            st.divider()
-            st.subheader("Crossover & Relaxatie Tabel")
-            st.dataframe(co_df, use_container_width=True)
-            
-            # Excel Download
-            summ_df = pd.DataFrame({'Parameter': ['Ea', 'WLF_C1', 'WLF_C2', 'Ref_T'], 'Waarde': [ea, c1, c2, ref_temp]})
-            shift_df = pd.DataFrame({'Temp': selected_temps, 'log_at': [st.session_state.shifts[t] for t in selected_temps]})
-            
-            st.download_button(
-                "📥 Download Geformatteerd Excel Rapport",
-                data=to_excel(summ_df, shift_df, co_df),
-                file_name="TPU_Rheology_Report.xlsx"
-            )
+    with tab6:
+        st.header("📊 TPU Expert Dashboard")
+        
+        # Bereken R2 veilig
+        r2_val = 1 - (np.sum((log_at - (slope * inv_t + intercept))**2) / np.sum((log_at - np.mean(log_at))**2))
+        # Zorg dat het een float is, geen array
+        r2_val = float(np.array(r2_val).flatten()[0]) 
+        
+        c1_val = float(c1)
+        c2_val = float(c2)
+        ea_val = float(ea)
+
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Flow Activation (Ea)", f"{ea_val:.1f} kJ/mol")
+        if not co_df.empty:
+            c2.metric("Max Relaxatietijd", f"{co_df['Lambda_s'].max():.2e} s")
+        c3.metric("TTS Fit (R²)", f"{r2_val:.4f}")
+        
+        st.divider()
+        
+        # Maak de summary dataframe SCHOON voor Excel
+        summ_df = pd.DataFrame({
+            'Parameter': ['Activatie-energie Ea (kJ/mol)', 'WLF C1', 'WLF C2', 'Referentie T (°C)', 'Fit Kwaliteit (R²)'],
+            'Waarde': [ea_val, c1_val, c2_val, float(ref_temp), r2_val]
+        })
+        
+        st.table(summ_df) # Visuele check in de app
+        
+        # Excel Download knop
+        st.download_button(
+            "📥 Download Geformatteerd Excel Rapport",
+            data=to_excel(summ_df, shift_data_df, co_df), # Zorg dat shift_data_df ook gedefinieerd is
+            file_name=f"TPU_Expert_Report_{int(ref_temp)}C.xlsx"
+        )
