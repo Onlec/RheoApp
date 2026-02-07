@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import minimize
+from scipy.optimize import minimize, curve_fit
 from scipy.interpolate import interp1d, UnivariateSpline
 from io import BytesIO
 
@@ -218,11 +218,43 @@ if uploaded_file:
         res_wlf = minimize(wlf_err, x0=[17.4, c2_init])
         wlf_c1, wlf_c2 = res_wlf.x
 
+        def cross_model(omega, eta_0, tau, n):
+            """Cross model voor viscositeit: eta = eta_0 / (1 + (tau*omega)^n)"""
+            return eta_0 / (1 + (tau * omega)**n)
+        
+        def calculate_rheo_metrics(master_df):
+            """Bereken η0 en GN0 vanuit de mastercurve data"""
+            # 1. Zero Shear Viscosity (η0) extrapolatie via Cross Model
+            w = master_df['w_s'].values
+            eta_complex = master_df['eta_s'].values
+            
+            try:
+                # Initiële schatting: eta_0 is vaak de hoogste gemeten viscositeit
+                popt, _ = curve_fit(cross_model, w, eta_complex, 
+                                    p0=[eta_complex.max(), 0.1, 0.8], 
+                                    bounds=([0, 0, 0], [np.inf, np.inf, 1]))
+                eta_0, tau_cross, n_cross = popt
+            except:
+                eta_0, tau_cross, n_cross = np.nan, np.nan, np.nan
+
+            # 2. Plateau Modulus (GN0) - Zoek waar G'' een minimum heeft of G' vlakt af
+            gp = master_df['Gp'].values
+            gpp = master_df['Gpp'].values
+            
+            # Theoretische methode: GN0 is vaak G' waarbij tan delta minimaal is in het rubberplateau
+            tan_d = gpp / gp
+            min_tan_idx = np.argmin(tan_d)
+            gn0 = gp[min_tan_idx] if w[min_tan_idx] > 1.0 else np.nan # Alleen zinvol bij hogere frequentie
+            
+            return eta_0, gn0, (tau_cross, n_cross)
+        
+        
         st.subheader(f"{sample_name}")
         # --- TABS ---
-        tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
                 "📈 Master Curve", "🧪 Structuur", "📉 tan δ Analyse", 
-                "🧬 Thermisch (Ea/WLF)", "🔬 Validatie", "💾 Export", "📊 Dashboard"
+                "🧬 Thermisch (Ea/WLF)", "🔬 Validatie", "💾 Export", 
+                "⚛️ Moleculaire Analyse", "📊 Dashboard"
             ])
 
         with tab1:
@@ -385,9 +417,12 @@ if uploaded_file:
                 d['eta_s'] = np.sqrt(d['Gp']**2 + d['Gpp']**2) / d['w_s']
                 m_list.append(d)
             
+            
             m_df = pd.concat(m_list).sort_values('w_s')
             s_val = st.slider("Smoothing Sterkte", 0.0, 2.0, 0.4)
             
+            eta0, gn0, cross_params = calculate_rheo_metrics(m_df)
+
             log_w = np.log10(m_df['w_s'])
             log_eta = np.log10(m_df['eta_s'])
             spl = UnivariateSpline(log_w, log_eta, s=s_val)
@@ -415,8 +450,45 @@ if uploaded_file:
                 "mastercurve.csv",
                 mime="text/csv"
             )
-
         with tab7:
+            st.header("⚛️ Moleculaire Analyse")
+        
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Zero Shear Viscosity (η₀)", f"{eta0:.2e} Pa·s" if not np.isnan(eta0) else "N/A")
+            m2.metric("Plateau Modulus (Gₙ⁰)", f"{gn0:.2e} Pa" if not np.isnan(gn0) else "N/A")
+            
+            # Professor's Insight over Mw
+            if not np.isnan(eta0):
+                # Voor TPU is de constante afhankelijk van de chemie, maar we tonen de trend
+                st.info(f"💡 **Moleculair Gewicht Trend:** η₀ is evenredig met $M_w^{{3.4}}$. Een stijging van 15% in η₀ duidt op een stijging van ca. 4% in $M_w$.")
+
+            st.divider()
+            
+            # Visuele extrapolatie plot
+            st.subheader("Extrapolatie naar η₀ (Cross Model)")
+            fig_ext, ax_ext = plt.subplots()
+            w_fit = np.logspace(np.log10(master_df['w_s'].min())-2, np.log10(master_df['w_s'].max()), 100)
+            
+            ax_ext.loglog(master_df['w_s'], master_df['eta_s'], 'ko', alpha=0.3, label='Meetdata')
+            if not np.isnan(eta0):
+                ax_ext.loglog(w_fit, cross_model(w_fit, *cross_params), 'r--', label='Cross Model Fit')
+                ax_ext.axhline(eta0, color='red', linestyle=':', label=f'η₀ = {eta0:.1e}')
+                
+            ax_ext.set_xlabel("ω·aT (rad/s)")
+            ax_ext.set_ylabel("η* (Pa·s)")
+            ax_ext.legend()
+            st.pyplot(fig_ext)
+            
+            st.markdown(f"""
+            <div class="expert-note">
+            <b>Waarom dit cruciaal is voor TPU:</b><br>
+            De <b>η₀ (Zero Shear Viscosity)</b> is de beste indicator voor de processtabiliteit. 
+            Bij TPU-coatings bepaalt dit of de film egaal blijft liggen (vloei) of gaat druipen (sagging) voordat het stolt. 
+            Als η₀ veel lager is dan je standaard batch, heb je waarschijnlijk last van vocht (hydrolyse) tijdens de extrusie of een te lage NCO:OH ratio.
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with tab8:
             st.header("📊 Expert Dashboard")
             
             # Kolommen voor metrics
