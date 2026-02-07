@@ -143,84 +143,74 @@ if uploaded_file:
     df = load_rheo_data(uploaded_file)
     
     if not df.empty and 'T' in df.columns:
-        # Groepeer per temperatuur (rond af op hele graden)
         df['T_group'] = df['T'].round(0)
         temps = sorted(df['T_group'].unique())
-        st.sidebar.success(f"✅ {len(temps)} temperaturen geladen: {temps}")
+        st.sidebar.success(f"✅ {len(temps)} temperaturen geladen")
         
         st.sidebar.header("2. TTS Instellingen")
-
-        # NIEUW: Multiselect om temperaturen uit te vinken
         selected_temps = st.sidebar.multiselect(
-            "Selecteer temperaturen voor Master Curve",
-            options=temps,
-            default=temps
+            "Selecteer temperaturen", options=temps, default=temps
         )
         
-        # Update ref_temp zodat deze alleen uit de geselecteerde temps kiest
         ref_temp = st.sidebar.selectbox(
             "Referentie Temperatuur (°C)", 
             selected_temps if selected_temps else temps, 
-            index=0
+            index=len(selected_temps)//2 if selected_temps else 0
         )
         
-        # Initialiseer shift factors
         if 'shifts' not in st.session_state or set(st.session_state.shifts.keys()) != set(temps):
             st.session_state.shifts = {t: 0.0 for t in temps}
         
-        # Knoppen naast elkaar: Auto-align en Reset
         col_auto, col_reset = st.sidebar.columns(2)
-        if col_reset.button("🔄 Reset"):
-            for t in temps:
-                st.session_state.shifts[t] = 0.0
+        
+        if col_reset.button("🔄 Reset Shifts"):
+            for t in temps: st.session_state.shifts[t] = 0.0
             st.rerun()
 
-        # Automatische uitlijning
-        if st.sidebar.button("🚀 Automatic"):
+        # Automatische uitlijning logica
+        if col_auto.button("🚀 Auto-Align"):
             for t in selected_temps:
-                st.sidebar.markdown(f"**Temperatuur: {t}°C**")
-                # Maak twee kolommen: 70% voor de slider, 30% voor de plus/min knoppen
-                col_slide, col_input = st.sidebar.columns([0.7, 0.3])
+                if t == ref_temp:
+                    st.session_state.shifts[t] = 0.0
+                    continue
                 
-                # De Slider (voor grove stappen)
-                val_slider = col_slide.slider(
-                    "Versleep", 
-                    -10.0, 10.0, 
-                    st.session_state.shifts[t],
-                    step=0.1,
-                    key=f"slider_{t}",
-                    label_visibility="collapsed" # Verbergt dubbele tekst
-                )
-                
-                # Het Getal-invoervak (met pijltjes voor stappen van 0.1)
-                val_input = col_input.number_input(
-                    "Stap",
-                    min_value=-10.0,
-                    max_value=10.0,
-                    value=val_slider,
-                    step=0.1,
-                    key=f"num_{t}",
-                    label_visibility="collapsed"
-                )
-                
-                # Update de session state met de waarde van de number_input
-                # (Streamlit synchroniseert de slider en input automatisch via de waarde-koppeling)
-                st.session_state.shifts[t] = val_input
-                st.sidebar.markdown("---")
-                
+                def objective(log_at):
+                    ref_data = df[df['T_group'] == ref_temp]
+                    target_data = df[df['T_group'] == t]
+                    log_w_ref, log_g_ref = np.log10(ref_data['omega']), np.log10(ref_data['Gp'])
+                    log_w_target = np.log10(target_data['omega']) + log_at
+                    log_g_target = np.log10(target_data['Gp'])
+                    f_interp = interp1d(log_w_ref, log_g_ref, bounds_error=False, fill_value=np.nan)
+                    val_at_target = f_interp(log_w_target)
+                    mask = ~np.isnan(val_at_target)
+                    return np.sum((val_at_target[mask] - log_g_target.values[mask])**2) if np.sum(mask) >= 2 else 9999
 
-            st.sidebar.success("Automatische uitlijning compleet!")
-        
-        # Handmatige sliders voor fine-tuning
-        st.sidebar.subheader("Handmatige Aanpassingen")
-        for t in temps:
-            st.session_state.shifts[t] = st.sidebar.slider(
-                f"log(aT) @ {t}°C", 
-                -10.0, 10.0, 
-                st.session_state.shifts[t],
-                step=0.1
+                res = minimize(objective, x0=st.session_state.shifts[t], method='Nelder-Mead')
+                st.session_state.shifts[t] = round(float(res.x[0]), 2)
+            st.rerun()
+
+        # DEZE SECTIE MOET BUITEN DE BUTTON-IF STAAN:
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("Fijninstelling (log aT)")
+        st.sidebar.caption("Klik op de pijltjes voor +/- 0.1")
+
+        for t in selected_temps:
+            st.sidebar.markdown(f"**Temperatuur: {t}°C**")
+            c1, c2 = st.sidebar.columns([0.65, 0.35])
+            
+            # De Slider
+            val_slider = c1.slider(
+                f"S_{t}", -10.0, 10.0, st.session_state.shifts[t], 
+                step=0.1, key=f"slide_{t}", label_visibility="collapsed"
             )
-        
+            
+            # Het invoervak met de pijltjes (step=0.1 zorgt voor de pijltjes)
+            val_input = c2.number_input(
+                f"N_{t}", -10.0, 10.0, value=val_slider, 
+                step=0.1, key=f"num_{t}", label_visibility="collapsed"
+            )
+            
+            st.session_state.shifts[t] = val_input
         # --- VISUALISATIE ---
         st.write("### Ingeladen Data Preview")
         st.dataframe(df[['T', 'omega', 'Gp', 'Gpp']].head(10))
