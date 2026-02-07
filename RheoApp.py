@@ -239,36 +239,83 @@ if uploaded_file:
             st.download_button("Download Smooth CSV", csv, "mastercurve.csv")
 
     with tab6:
-        st.header("📊 TPU Expert Dashboard")
-        
-        # Bereken R2 veilig
-        r2_val = 1 - (np.sum((log_at - (slope * inv_t + intercept))**2) / np.sum((log_at - np.mean(log_at))**2))
-        # Zorg dat het een float is, geen array
-        r2_val = float(np.array(r2_val).flatten()[0]) 
-        
-        c1_val = float(c1)
-        c2_val = float(c2)
-        ea_val = float(ea)
+            st.header("📊 TPU Expert Dashboard")
+            
+            # --- 1. CROSSOVER BEREKENING (VOORAF) ---
+            co_list = []
+            for t in selected_temps:
+                d = df[df['T_group'] == t].sort_values('omega')
+                if len(d) > 3:
+                    try:
+                        # Bereken log(Gp) - log(Gpp)
+                        f_diff = interp1d(np.log10(d['omega']), np.log10(d['Gp']) - np.log10(d['Gpp']), bounds_error=False)
+                        w_range = np.logspace(np.log10(d['omega'].min()), np.log10(d['omega'].max()), 500)
+                        diffs = f_diff(np.log10(w_range))
+                        
+                        # Zoek nulpunt (crossover)
+                        idx_zero = np.nanargmin(np.abs(diffs))
+                        if np.abs(diffs[idx_zero]) < 0.1: # Alleen toevoegen als er echt een snijpunt is
+                            w_co = w_range[idx_zero]
+                            co_list.append({
+                                "T_C": int(t), 
+                                "w_co": round(w_co, 2), 
+                                "Lambda_s": round(1/w_co, 4)
+                            })
+                    except:
+                        pass
+            
+            # Maak co_df aan, ook als deze leeg is (voorkomt NameError)
+            co_df = pd.DataFrame(co_list) if co_list else pd.DataFrame(columns=["T_C", "w_co", "Lambda_s"])
 
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Flow Activation (Ea)", f"{ea_val:.1f} kJ/mol")
-        if not co_df.empty:
-            c2.metric("Max Relaxatietijd", f"{co_df['Lambda_s'].max():.2e} s")
-        c3.metric("TTS Fit (R²)", f"{r2_val:.4f}")
-        
-        st.divider()
-        
-        # Maak de summary dataframe SCHOON voor Excel
-        summ_df = pd.DataFrame({
-            'Parameter': ['Activatie-energie Ea (kJ/mol)', 'WLF C1', 'WLF C2', 'Referentie T (°C)', 'Fit Kwaliteit (R²)'],
-            'Waarde': [ea_val, c1_val, c2_val, float(ref_temp), r2_val]
-        })
-        
-        st.table(summ_df) # Visuele check in de app
-        
-        # Excel Download knop
-        st.download_button(
-            "📥 Download Geformatteerd Excel Rapport",
-            data=to_excel(summ_df, shift_data_df, co_df), # Zorg dat shift_data_df ook gedefinieerd is
-            file_name=f"TPU_Expert_Report_{int(ref_temp)}C.xlsx"
-        )
+            # --- 2. STATISTIEKEN BEREKENEN ---
+            t_k = np.array([t + 273.15 for t in selected_temps])
+            inv_t = 1/t_k
+            log_at = np.array([st.session_state.shifts[t] for t in selected_temps])
+            
+            # Arrhenius stats
+            slope, intercept = np.polyfit(inv_t, log_at, 1)
+            ea_val = float(abs(slope * 8.314 * np.log(10) / 1000))
+            r2_val = float(1 - (np.sum((log_at - (slope * inv_t + intercept))**2) / np.sum((log_at - np.mean(log_at))**2)))
+
+            # --- 3. DASHBOARD WEERGAVE ---
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Flow Activation (Ea)", f"{ea_val:.1f} kJ/mol")
+            
+            if not co_df.empty:
+                max_lambda = co_df['Lambda_s'].max()
+                c2.metric("Max Relaxatietijd", f"{max_lambda:.2e} s")
+            else:
+                c2.metric("Max Relaxatietijd", "N/A")
+                
+            c3.metric("TTS Fit (R²)", f"{r2_val:.4f}")
+            
+            st.divider()
+            
+            # --- 4. EXPORT VOORBEREIDING ---
+            # Maak een schone tabel voor de samenvatting
+            summ_df = pd.DataFrame({
+                'Parameter': ['Activatie-energie Ea (kJ/mol)', 'WLF C1', 'WLF C2', 'Referentie T (°C)', 'Fit Kwaliteit (R²)'],
+                'Waarde': [round(ea_val, 2), round(float(c1), 2), round(float(c2), 2), float(ref_temp), round(r2_val, 4)]
+            })
+            
+            # Tabel met shift factoren voor Excel
+            shift_export_df = pd.DataFrame({
+                'Temperatuur_C': selected_temps,
+                'log_aT': [st.session_state.shifts[t] for t in selected_temps]
+            })
+
+            st.subheader("Overzichtstabel")
+            st.table(summ_df)
+            
+            if not co_df.empty:
+                st.subheader("Crossover Punten")
+                st.dataframe(co_df, use_container_width=True)
+
+            # --- 5. EXCEL DOWNLOAD ---
+            excel_data = to_excel(summ_df, shift_export_df, co_df)
+            st.download_button(
+                label="📥 Download Geformatteerd Excel Rapport",
+                data=excel_data,
+                file_name=f"TPU_Expert_Report_{int(ref_temp)}C.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
