@@ -438,55 +438,86 @@ if uploaded_file:
             st.pyplot(fig_tan)
             st.info("💡 Peaks in tan δ geven karakteristieke relaxatietijden aan. Bij TPU zie je vaak een verschuiving die duidt op de beweeglijkheid van de zachte segmenten.")
         with tab4:
-            st.subheader("🧬 Arrhenius vs WLF Vergelijking")
+            st.subheader("🧬 Thermische Karakterisatie: Arrhenius, WLF & VFT")
             
-            # Gebruik de reeds berekende waarden
+            # 1. Definieer de modellen
+            # VFT Model: log(aT) = A + B / (T - T0)
+            def vft_model(T, A, B, T0):
+                return A + B / (T - T0)
+
+            # 2. Bereken VFT fit (Hybride)
+            T_vals_K = np.array(selected_temps) + 273.15
+            y_vals = log_at_global
+            
+            vft_success = False
+            try:
+                # p0: A (offset), B (activatie-constante), T0 (Vogel temp, vaak Tg - 50)
+                p0_vft = [-10, 500, (tg_hint + 273.15) - 50]
+                popt_vft, _ = curve_fit(vft_model, T_vals_K, y_vals, p0=p0_vft, maxfev=10000)
+                vft_success = True
+            except:
+                vft_success = False
+
+            # --- Layout ---
             col_t1, col_t2 = st.columns([2, 1])
             
             with col_t1:
-                fig_t, ax_t = plt.subplots()
-                ax_t.scatter(selected_temps, log_at_global, color='black', label='Data', s=50)
+                fig_t, ax_t = plt.subplots(figsize=(10, 6))
+                ax_t.scatter(selected_temps, y_vals, color='black', label='Shift Factors (Data)', s=80, zorder=5)
                 
-                # Arrhenius fit lijn
-                ax_t.plot(
-                    selected_temps, 
-                    slope_g*(1/(np.array(selected_temps)+273.15)) + intercept_g, 
-                    'r--', 
-                    label='Arrhenius Fit', 
-                    linewidth=2
-                )
+                # Plot bereik voor vloeiende lijnen
+                t_smooth = np.linspace(min(selected_temps)-5, max(selected_temps)+5, 100)
+                t_smooth_k = t_smooth + 273.15
                 
-                # WLF fit lijn
-                ax_t.plot(
-                    selected_temps, 
-                    wlf_model([wlf_c1, wlf_c2], t_k_global, tr_k_global), 
-                    'b-', 
-                    label='WLF Fit', 
-                    linewidth=2
-                )
+                # Arrhenius lijn
+                ax_t.plot(t_smooth, slope_g*(1/t_smooth_k) + intercept_g, 
+                         'r--', label=f'Arrhenius (Ea={ea_final:.1f} kJ/mol)', alpha=0.7)
                 
-                ax_t.set_xlabel("T (°C)")
+                # WLF lijn
+                ax_t.plot(t_smooth, wlf_model([wlf_c1, wlf_c2], t_smooth_k, tr_k_global), 
+                         'b-', label=f'WLF (C1={wlf_c1:.1f})', linewidth=2)
+                
+                # VFT lijn (Hybride)
+                if vft_success:
+                    ax_t.plot(t_smooth, vft_model(t_smooth_k, *popt_vft), 
+                             'g:', label='VFT Hybride Fit', linewidth=3)
+                
+                ax_t.set_xlabel("Temperatuur (°C)")
                 ax_t.set_ylabel("log(aT)")
                 ax_t.legend()
-                ax_t.grid(True, alpha=0.3)
+                ax_t.grid(True, alpha=0.2)
                 st.pyplot(fig_t)
-            
+                
+                st.info("💡 **VFT Inzicht:** De groene stippellijn (VFT) verbindt de 'bocht' van WLF met de 'rechte' van Arrhenius. Dit is vaak het meest realistische model voor TPU over het hele bereik.")
+
             with col_t2:
+                # Bestaande Metrics & Inzichten
                 st.metric("Ea (Arrhenius)", f"{ea_final:.1f} kJ/mol")
+                
                 if r2_final < 0.95:
-                    st.error(f"⚠️ **Advies:** Arrhenius fit is matig (R²={r2_final:.3f}). Gebruik de **WLF parameters** voor extrusie-simulaties.")
+                    st.error(f"⚠️ **Advies:** Arrhenius fit is matig (R²={r2_final:.3f}).")
                 else:
-                    st.success(f"✅ Arrhenius gedrag gedetecteerd (R²={r2_final:.3f}). Ea is betrouwbaar.")
-                st.write(f"**WLF C1:** {wlf_c1:.2f}")
-                st.write(f"**WLF C2:** {wlf_c2:.2f}")
+                    st.success(f"✅ Arrhenius gedrag gedetecteerd (R²={r2_final:.3f}).")
+                
+                with st.expander("🔢 Parameters overzicht"):
+                    st.write(f"**WLF C1:** {wlf_c1:.2f}")
+                    st.write(f"**WLF C2:** {wlf_c2:.2f}")
+                    if vft_success:
+                        st.write(f"**VFT T₀ (Vogel):** {popt_vft[2]-273.15:.1f} °C")
+                
                 if ea_final > 150:
-                    st.info("💡 Hoge Ea: Dit materiaal reageert zeer gevoelig op temperatuurveranderingen in de extruder/oven.")
+                    st.info("🌡️ **Hoge Ea:** Materiaal is zeer T-gevoelig.")
+                
                 st.warning("""
-                **Welke te volgen?**
-                * Gebruik **Arrhenius** ($E_a$) als de TPU ver boven $T_g$ is (meestal in de smelt).
-                * Gebruik **WLF** als je dicht bij de glasovergang meet ($T_g < T < T_g + 100^\\circ\\text{C}$).
+                **Beslissingshulp:**
+                1. **Vloeien/Extrusie:** Vertrouw op de rode lijn (Arrhenius).
+                2. **Demping/Solid state:** Vertrouw op de blauwe lijn (WLF).
+                3. **Hele bereik:** Gebruik VFT (groene lijn).
                 """)
 
+                # Extra check op fysieke consistentie
+                if wlf_c1 < 0:
+                    st.error("❗ **Fysische waarschuwing:** Negatieve C1 gedetecteerd. De WLF-fit is wiskundig gelukt maar fysisch onmogelijk. Check de Van Gurp-Palmen plot op fase-scheiding!")
         with tab5:
             st.subheader("🔬 Geavanceerde TTS Validatie")
             cv1, cv2 = st.columns(2)
