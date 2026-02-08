@@ -441,19 +441,22 @@ if uploaded_file:
             st.subheader("🧬 Thermische Karakterisatie: Arrhenius, WLF & VFT")
             
             # 1. Definieer de modellen
-            # VFT Model: log(aT) = A + B / (T - T0)
             def vft_model(T, A, B, T0):
                 return A + B / (T - T0)
 
-            # 2. Bereken VFT fit (Hybride)
+            # 2. Voorbereiding data
             T_vals_K = np.array(selected_temps) + 273.15
             y_vals = log_at_global
             
+            # 3. Bereken VFT fit met Professor's Bounds
             vft_success = False
             try:
-                # p0: A (offset), B (activatie-constante), T0 (Vogel temp, vaak Tg - 50)
                 p0_vft = [-10, 500, (tg_hint + 273.15) - 50]
-                popt_vft, _ = curve_fit(vft_model, T_vals_K, y_vals, p0=p0_vft, maxfev=10000)
+                # Bounds: T0 moet onder de laagste meettemperatuur liggen om explosie te voorkomen
+                lower_b = [-np.inf, 10, 50] 
+                upper_b = [np.inf, 5000, min(T_vals_K) - 0.5]
+                
+                popt_vft, _ = curve_fit(vft_model, T_vals_K, y_vals, p0=p0_vft, bounds=(lower_b, upper_b), maxfev=10000)
                 vft_success = True
             except:
                 vft_success = False
@@ -465,59 +468,59 @@ if uploaded_file:
                 fig_t, ax_t = plt.subplots(figsize=(10, 6))
                 ax_t.scatter(selected_temps, y_vals, color='black', label='Shift Factors (Data)', s=80, zorder=5)
                 
-                # Plot bereik voor vloeiende lijnen
-                t_smooth = np.linspace(min(selected_temps)-5, max(selected_temps)+5, 100)
+                t_smooth = np.linspace(min(selected_temps)-10, max(selected_temps)+10, 150)
                 t_smooth_k = t_smooth + 273.15
                 
-                # Arrhenius lijn
-                ax_t.plot(t_smooth, slope_g*(1/t_smooth_k) + intercept_g, 
-                         'r--', label=f'Arrhenius (Ea={ea_final:.1f} kJ/mol)', alpha=0.7)
+                # Modellen plotten
+                y_arr = slope_g*(1/t_smooth_k) + intercept_g
+                y_wlf = wlf_model([wlf_c1, wlf_c2], t_smooth_k, tr_k_global)
                 
-                # WLF lijn
-                ax_t.plot(t_smooth, wlf_model([wlf_c1, wlf_c2], t_smooth_k, tr_k_global), 
-                         'b-', label=f'WLF (C1={wlf_c1:.1f})', linewidth=2)
+                ax_t.plot(t_smooth, y_arr, 'r--', label='Arrhenius (Smelt-model)', alpha=0.6)
+                ax_t.plot(t_smooth, y_wlf, 'b-', label='WLF (Rubber-model)', linewidth=2)
                 
-                # VFT lijn (Hybride)
                 if vft_success:
-                    ax_t.plot(t_smooth, vft_model(t_smooth_k, *popt_vft), 
-                             'g:', label='VFT Hybride Fit', linewidth=3)
+                    ax_t.plot(t_smooth, vft_model(t_smooth_k, *popt_vft), 'g:', label='VFT Hybride Fit', linewidth=3)
+
+                # --- SOFTENING POINT INDICATOR ---
+                # We zoeken het punt waar de modellen het meest divergeren of elkaar snijden
+                diff = np.abs(y_arr - y_wlf)
+                softening_idx = np.argmin(diff)
+                t_softening = t_smooth[softening_idx]
+                
+                ax_t.axvline(t_softening, color='orange', linestyle='-.', alpha=0.5, label='Softening Transition')
                 
                 ax_t.set_xlabel("Temperatuur (°C)")
                 ax_t.set_ylabel("log(aT)")
                 ax_t.legend()
                 ax_t.grid(True, alpha=0.2)
                 st.pyplot(fig_t)
-                
-                st.info("💡 **VFT Inzicht:** De groene stippellijn (VFT) verbindt de 'bocht' van WLF met de 'rechte' van Arrhenius. Dit is vaak het meest realistische model voor TPU over het hele bereik.")
 
             with col_t2:
-                # Bestaande Metrics & Inzichten
+                # Metrics
                 st.metric("Ea (Arrhenius)", f"{ea_final:.1f} kJ/mol")
                 
+                # De nieuwe Softening Point indicator
+                st.metric("Estimated Softening Point", f"{t_softening:.1f} °C", 
+                          help="De temperatuur waarbij het materiaal transformeert van rubber-gedrag naar smelt-gedrag.")
+                
                 if r2_final < 0.95:
-                    st.error(f"⚠️ **Advies:** Arrhenius fit is matig (R²={r2_final:.3f}).")
+                    st.error(f"⚠️ **Advies:** Lage Arrhenius R² ({r2_final:.3f}). Het materiaal is waarschijnlijk nog in de verwekingsfase.")
                 else:
-                    st.success(f"✅ Arrhenius gedrag gedetecteerd (R²={r2_final:.3f}).")
-                
-                with st.expander("🔢 Parameters overzicht"):
-                    st.write(f"**WLF C1:** {wlf_c1:.2f}")
-                    st.write(f"**WLF C2:** {wlf_c2:.2f}")
-                    if vft_success:
-                        st.write(f"**VFT T₀ (Vogel):** {popt_vft[2]-273.15:.1f} °C")
-                
-                if ea_final > 150:
-                    st.info("🌡️ **Hoge Ea:** Materiaal is zeer T-gevoelig.")
-                
-                st.warning("""
-                **Beslissingshulp:**
-                1. **Vloeien/Extrusie:** Vertrouw op de rode lijn (Arrhenius).
-                2. **Demping/Solid state:** Vertrouw op de blauwe lijn (WLF).
-                3. **Hele bereik:** Gebruik VFT (groene lijn).
-                """)
+                    st.success(f"✅ Stabiele smelt gedetecteerd boven {t_softening:.0f}°C.")
 
-                # Extra check op fysieke consistentie
-                if wlf_c1 < 0:
-                    st.error("❗ **Fysische waarschuwing:** Negatieve C1 gedetecteerd. De WLF-fit is wiskundig gelukt maar fysisch onmogelijk. Check de Van Gurp-Palmen plot op fase-scheiding!")
+                with st.expander("🔬 Model Parameters"):
+                    st.write(f"**VFT T₀ (Vogel):** {popt_vft[2]-273.15:.1f} °C" if vft_success else "VFT: N/A")
+                    st.write(f"**WLF C1/C2:** {wlf_c1:.1f} / {wlf_c2:.1f}")
+
+                st.markdown(f"""
+                <div class="expert-note">
+                <b>Professor's Diagnose:</b><br>
+                Bij <b>{t_softening:.1f}°C</b> kruisen de twee regimes elkaar. 
+                Beneden deze temperatuur domineren de fysieke crosslinks (harde segmenten). 
+                Daarboven gedraagt de TPU zich als een vloeistof. Gebruik Arrhenius-data alleen 
+                voor temperaturen die ruim boven dit punt liggen.
+                </div>
+                """, unsafe_allow_html=True)
         with tab5:
             st.subheader("🔬 Geavanceerde TTS Validatie")
             cv1, cv2 = st.columns(2)
