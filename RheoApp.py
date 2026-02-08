@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from scipy.optimize import minimize, curve_fit
 from scipy.interpolate import interp1d, UnivariateSpline
 from io import BytesIO
@@ -125,6 +126,24 @@ def to_excel(summary_df, shift_df, crossover_df):
             writer.sheets[sheetname].set_column('A:C', 20)
             
     return output.getvalue()
+
+def find_crossover(omega, Gp, Gpp):
+    """Vindt het snijpunt waar G' = G'' via log-lineaire interpolatie."""
+    if len(omega) < 2: return None, None
+    
+    # We zoeken naar tekenwisseling van (log10(Gp) - log10(Gpp))
+    diff = np.log10(Gp) - np.log10(Gpp)
+    for i in range(len(diff) - 1):
+        if diff[i] * diff[i+1] <= 0: # Tekenwisseling gevonden
+            # Interpolatie voor omega
+            f_omega = interp1d([diff[i], diff[i+1]], [np.log10(omega[i]), np.log10(omega[i+1])])
+            omega_co = 10**f_omega(0)
+            # Interpolatie voor modulus
+            f_modulus = interp1d([np.log10(omega[i]), np.log10(omega[i+1])], [np.log10(Gp[i]), np.log10(Gp[i+1])])
+            modulus_co = 10**f_modulus(np.log10(omega_co))
+            return omega_co, modulus_co
+    return None, None
+
 def cross_model(omega, eta_0, tau, n):
     return eta_0 / (1 + (tau * omega)**n)
 
@@ -132,19 +151,15 @@ def calculate_rheo_metrics(m_df):
     if m_df.empty:
         return np.nan, np.nan, [0, 0, 0], False
     
-    # Voorbereiding data voor fit
     w = m_df['w_s'].values
     eta_complex = m_df['eta_s'].values
-    
-    # Initiële schatting: eta0 is vaak de hoogste viscositeit, tau ~ 1/omega_crossover
     p0 = [eta_complex.max(), 0.1, 0.8]
     
     try:
-        popt, _ = curve_fit(cross_model, w, eta_complex, p0=p0, maxfev=5000)
+        popt, _ = curve_fit(lambda o, e, t, n: e / (1 + (t * o)**n), w, eta_complex, p0=p0, maxfev=5000)
         eta0 = popt[0]
-        # Schatting G_N0: Waarde van G' waar tan delta minimaal is (plateau)
-        # Dit is een versimpeling voor TPU
-        gn0 = m_df.loc[m_df['Gpp']/m_df['Gp'] == (m_df['Gpp']/m_df['Gp']).min(), 'Gp'].values[0]
+        # Verbeterde plateau modulus volgens Professor:
+        gn0 = m_df.loc[m_df['Gpp'] == m_df['Gpp'].min(), 'Gp'].max()
         return eta0, gn0, popt, True
     except:
         return np.nan, np.nan, p0, False
@@ -165,6 +180,12 @@ if uploaded_file:
         selected_temps = st.sidebar.multiselect("Selecteer Temperaturen", temps, default=temps)
         ref_temp = st.sidebar.selectbox("Referentie T (°C)", selected_temps, index=len(selected_temps)//2)
         cmap_opt = st.sidebar.selectbox("Kleurenschema", ["coolwarm", "viridis", "magma", "jet"])
+
+        # Nieuwe Matplotlib colormap syntax
+        cmap = mpl.colormaps[cmap_opt]
+        colors = [cmap(i) for i in np.linspace(0, 1, len(selected_temps))]
+
+        
 
         st.sidebar.divider()
         st.sidebar.markdown("**WLF Optimalisatie**")
@@ -238,6 +259,15 @@ if uploaded_file:
         res_wlf = minimize(wlf_err, x0=[17.4, c2_init])
         wlf_c1, wlf_c2 = res_wlf.x
 
+        # --- BEREKEN CROSSOVERS PER TEMPERATUUR ---
+        co_list = []
+        for t in selected_temps:
+            d_t = df[df['T_group'] == t].sort_values('omega')
+            w_co, g_co = find_crossover(d_t['omega'].values, d_t['Gp'].values, d_t['Gpp'].values)
+            if w_co:
+                co_list.append({'T (°C)': t, 'Crossover ω (rad/s)': round(w_co, 2), 'G=G\'\' (Pa)': round(g_co, 0)})
+        co_df = pd.DataFrame(co_list)
+
         # --- 1. DATA AGGREGATIE (Cruciaal voor alle tabs) ---
         m_list = []
         for t in selected_temps:
@@ -254,7 +284,13 @@ if uploaded_file:
         # --- 2. BEREKEN METRICS (Eén keer uitvoeren) ---
         eta0, gn0, fit_params, fit_success = calculate_rheo_metrics(m_df)
         
-        
+        # 1. Terminal Slope Verbetering (Professor's Delta > 75 graden criterium)
+        terminal_zone = m_df[m_df['delta'] > 75]
+        if len(terminal_zone) > 3:
+            slope_term = np.polyfit(np.log10(terminal_zone['w_s']), np.log10(terminal_zone['Gp']), 1)[0]
+        else:
+            slope_term = np.nan
+
         # Bereken Terminal Slope (G') robuust
         # We pakken de laagste 20% van de frequentie-range voor de vloeizone
         term_idx = int(len(m_df) * 0.2)
@@ -380,6 +416,10 @@ if uploaded_file:
             
             with col_t2:
                 st.metric("Ea (Arrhenius)", f"{ea_final:.1f} kJ/mol")
+                if r2_final < 0.95:
+                    st.error(f"⚠️ **Advies:** Arrhenius fit is matig (R²={r2_final:.3f}). Gebruik de **WLF parameters** voor extrusie-simulaties.")
+                else:
+                    st.success(f"✅ Arrhenius gedrag gedetecteerd (R²={r2_final:.3f}). Ea is betrouwbaar.")
                 st.write(f"**WLF C1:** {wlf_c1:.2f}")
                 st.write(f"**WLF C2:** {wlf_c2:.2f}")
                 if ea_final > 150:
@@ -550,6 +590,19 @@ if uploaded_file:
                 st.subheader("Crossover Punten & Relaxatie")
                 st.dataframe(co_df, use_container_width=True)
 
+            st.subheader("Overzichtstabel")
+            summ_df = pd.DataFrame([
+                {'Parameter': 'Activatie Energie (Ea)', 'Waarde': f"{ea_final:.1f}", 'Eenheid': 'kJ/mol'},
+                {'Parameter': 'Zero Shear Viscosity (η₀)', 'Value': f"{eta0:.2e}", 'Eenheid': 'Pa·s'},
+                {'Parameter': 'Terminal Slope (δ > 75°)', 'Value': f"{slope_term:.2f}", 'Eenheid': '-'},
+                {'Parameter': 'Plateau Modulus (Gₙ⁰)', 'Value': f"{gn0:.2e}", 'Eenheid': 'Pa'}
+            ])
+            st.table(summ_df)
+            
+            if not co_df.empty:
+                st.subheader("Gevonden Crossover Punten")
+                st.dataframe(co_df, use_container_width=True)
+                
             # Excel Download
             shift_export_df = pd.DataFrame({
                 'Temperatuur_C': selected_temps,
