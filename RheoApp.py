@@ -10,19 +10,33 @@ from io import BytesIO
 from translations import get_translations
 
 
+from translations import get_translations
+
+# --- 1. TAAL INITIALISATIE (MOET BOVENAAN) ---
 if 'lang' not in st.session_state:
-    st.session_state.lang = 'NL'
+    st.session_state.lang = 'EN'
 
+# Haal de vertalingen op
+all_translations = get_translations()
+
+# De 'texts' variabele veilig vullen met een fallback naar NL als er iets misgaat
+texts = all_translations.get(st.session_state.lang, all_translations["EN"])
+
+# --- 2. SIDEBAR SWITCHER ---
 with st.sidebar:
-    st.divider()
+    st.title("🌐 Language / Taal")
     lang_choice = st.selectbox(
-        "Taal / Language", 
+        "Select Language", 
         ["Nederlands", "English"], 
-        index=0 if st.session_state.lang == 'NL' else 1
+        index=0 if st.session_state.lang == 'NL' else 1,
+        key="lang_selector" # Unieke key voorkomt dubbele initialisatie
     )
-    st.session_state.lang = "NL" if lang_choice == "Nederlands" else "EN"
-    texts = get_translations()[st.session_state.lang]
-
+    
+    # Update de taal als de gebruiker wisselt
+    new_lang = "NL" if lang_choice == "Nederlands" else "EN"
+    if new_lang != st.session_state.lang:
+        st.session_state.lang = new_lang
+        st.rerun() # Forceer een refresh om de nieuwe taal direct te laden
 
 
 # --- CONFIGURATIE & STYLING ---
