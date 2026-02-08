@@ -918,20 +918,32 @@ else:
     
     with st.expander("ℹ️ Gebruiksinstructies"):
         st.markdown("""
-        ### TPU Rheology Expert Tool
+        ### RheoApp - Master Curve and analysis Tool
         
-        **Features:**
-        - 📈 **Master Curve**: Time-Temperature Superposition met automatische en handmatige shift factors
-        - 🧪 **Van Gurp-Palmen**: Structurele analyse en thermorheologische complexiteit
-        - 🧬 **Arrhenius & WLF**: Activatie-energie en glasovergang karakterisatie
-        - 🔬 **Validatie**: Han plot en Cole-Cole plot voor TTS geldigheid
-        - 💾 **Export**: Smooth master curves en Excel rapportage
-        - 📊 **Dashboard**: Overzicht van alle kritieke parameters
-        
-        **Gebruik:**
-        1. Upload een frequency sweep CSV
-        2. Selecteer temperaturen en referentie temperatuur
-        3. Klik op "🚀 Auto-Align" of pas handmatig aan
-        4. Verken de verschillende tabs voor analyse
-        5. Download je resultaten als CSV of Excel
+        1. UPLOAD
+   ├─ Klik "Browse files" in sidebar
+   ├─ Selecteer CSV/TXT bestand met frequency sweep data
+   └─ Controleer of sample naam correct geladen is
+
+2. CONFIGURATIE
+   ├─ Selecteer temperaturen voor analyse
+   ├─ Kies referentietemperatuur (advies: hoogste T)
+   ├─ Pas colormap aan naar voorkeur
+   └─ Vul verwachte Tg in (voor WLF hint)
+
+3. ALIGNMENT
+   ├─ Optie A: Klik "🚀 Auto-Align" voor automatisch
+   └─ Optie B: Pas sliders handmatig aan
+
+4. ANALYSE
+   ├─ Tab 1: Controleer overlap master curve
+   ├─ Tab 2: Check Van Gurp-Palmen voor complexiteit
+   ├─ Tab 3: Bekijk tan δ relaxaties
+   ├─ Tab 4: Analyseer thermische modellen
+   ├─ Tab 5: Valideer TTS aannames
+   ├─ Tab 6: Extractie moleculaire parameters
+   └─ Tab 7: Review dashboard + export
+
+5. EXPORT
+   └─ Download CSV's via dashboard buttons
         """)
