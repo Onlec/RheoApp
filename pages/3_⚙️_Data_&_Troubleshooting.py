@@ -1013,47 +1013,40 @@ with tab_prep:
     
     # Pre-Measurement Checklist
     st.subheader("✅ PRE-MEASUREMENT CHECKLIST")
-    
+    # --- PAGINA 3: TROUBLESHOOTING ---
     trouble_data = {
-        "Item": [
-            "📦 Sample Voorbereiding",
-            "▫️ Virgin pellets (geen re-grind)",
-            "▫️ Homogeen lot (zelfde batch)",
-            "▫️ Visuele inspectie OK (kleur, vorm)",
-            "▫️ Voldoende sample (50-100 g reserve)",
-            "",
-            "💧 Drogen",
-            "▫️ Vacuum oven pre-heat 80°C",
-            "▫️ Sample 4-6 uur gedroogd",
-            "▫️ Vochtmeter check < 0.02%",
-            "▫️ Sample in desiccator tot gebruik",
-            "▫️ Max 30 min tussen drogen en meting",
-            "",
-            "🔬 Instrument Setup",
-            "▫️ Rheometer geometrie schoon (solvent + kimwipe)",
-            "▫️ Gap zero check uitgevoerd",
-            "▫️ N₂ purge aangesloten en getest",
-            "▫️ Oven temperatuur kalibratie < 6 maanden oud",
-            "▫️ Environmental chamber ingesteld",
-            "",
-            "📊 Meetprotocol",
-            "▫️ DSC Tm bepaald (voor T_min keuze)",
-            "▫️ Temperaturen gepland (min 5, span > 50°C)",
-            "▫️ Frequentie range: 0.01-100 rad/s",
-            "▫️ Strain sweep protocol klaar",
-            "▫️ Time-sweep check ingepland @ max T",
-            "",
-            "💾 Data Management",
-            "▫️ Sample ID uniek gekozen",
-            "▫️ Logboek entry gemaakt (batch, datum, operator)",
-            "▫️ Export instellingen gecontroleerd (tabs, headers)",
-            "▫️ Backup locatie ingesteld"
+        "Symptoom": [
+            "G' daalt plotseling", 
+            "G' stijgt onverklaarbaar", 
+            "Fasehoek δ > 90°", 
+            "G' daalt in time-sweep", 
+            "G' stijgt in time-sweep", 
+            "Bellen in sample", 
+            "Bruine verkleuring"
         ],
-        "Status": ["☐"] * 30,
-        "Opmerkingen": [""] * 30
+        "Oorzaak": [
+            "Sample squeeze flow", 
+            "Sample te weinig/Slip", 
+            "Instrument traagheid", 
+            "Degradatie/Hydrolyse", 
+            "Crosslinking/Na-reactie", 
+            "Vocht/CO2 vorming", 
+            "Oxidatie"
+        ],
+        "Directe Actie": [
+            "Reset gap", 
+            "Reduceer gap 0.1mm", 
+            "Check luchttoevoer", 
+            "Check droogtijd", 
+            "T_max verlagen", 
+            "Sample 2u nadrogen", 
+            "N2 flow verhogen"
+        ]
     }
-    
+
+    # We gebruiken de variabele die je op regel 1056 hebt staan
     df_checklist = pd.DataFrame(trouble_data)
+    st.table(df_checklist)
     
     # Editable checklist (voor interactief gebruik)
     st.info("💡 **Tip:** Screenshot deze checklist of print als PDF voor gebruik bij de rheometer!")
