@@ -259,81 +259,145 @@ if uploaded_file:
                 0.1, 
                 key=f"{t}_{st.session_state.reset_id}"
             )
-        # Genereer kleurenlijst op basis van geselecteerde optie
-        import matplotlib.cm as cm
-        cmap = cm.get_cmap(cmap_opt)
-        colors = [cmap(i) for i in np.linspace(0, 1, len(selected_temps))]
 
-        # Initialiseer lege dataframes voor export/dashboard (voorkomt crashes)
-        summ_df = pd.DataFrame(columns=['Parameter', 'Waarde', 'Eenheid'])
-        co_df = pd.DataFrame(columns=['T (°C)', 'Crossover ω (rad/s)', 'G=G\'\' (Pa)'])
+        # ============================================================
+        # CENTRALE DATA AGGREGATIE (1x uitvoeren voor alle tabs)
+        # ============================================================
 
-        # --- BEREKENINGEN (NU OP DE JUISTE PLEK - NA VARIABELE DEFINITIE) ---
-        t_k_global = np.array([t + 273.15 for t in selected_temps])
-        log_at_global = np.array([st.session_state.shifts[t] for t in selected_temps])
-        tr_k_global = ref_temp + 273.15
-
-        # Arrhenius
-        inv_t_global = 1/t_k_global
-        slope_g, intercept_g = np.polyfit(inv_t_global, log_at_global, 1)
-        ea_final = float(abs(slope_g * 8.314 * np.log(10) / 1000))
-        r2_final = float(1 - (np.sum((log_at_global - (slope_g * inv_t_global + intercept_g))**2) / 
-                              np.sum((log_at_global - np.mean(log_at_global))**2)))
-
-        
-        # WLF met Tg-hint van Professor
-        def wlf_model(p, t, tr): return -p[0]*(t-tr) / (p[1] + (t-tr))
-        def wlf_err(p): return np.sum((log_at_global - wlf_model(p, t_k_global, tr_k_global))**2)
-        
-        # Startwaarden aanpassen op basis van Tg
-        c2_init = max(50.0, ref_temp - tg_hint) 
-        res_wlf = minimize(wlf_err, x0=[17.4, c2_init], bounds=[(1, 50), (10, 200)])
-        wlf_c1, wlf_c2 = res_wlf.x
-
-        # --- BEREKEN CROSSOVERS PER TEMPERATUUR ---
-        co_list = []
-        for t in selected_temps:
-            d_t = df[df['T_group'] == t].sort_values('omega')
-            w_co, g_co = find_crossover(d_t['omega'].values, d_t['Gp'].values, d_t['Gpp'].values)
-            if w_co:
-                co_list.append({'T (°C)': t, 'Crossover ω (rad/s)': round(w_co, 2), 'G=G\'\' (Pa)': round(g_co, 0)})
-        co_df = pd.DataFrame(co_list)
-
-        # --- 1. DATA AGGREGATIE (Cruciaal voor alle tabs) ---
         m_list = []
         for t in selected_temps:
             d = df[df['T_group'] == t].copy()
             at = 10**st.session_state.shifts[t]
             d['w_s'] = d['omega'] * at
             d['eta_s'] = np.sqrt(d['Gp']**2 + d['Gpp']**2) / d['w_s']
-            
-            # --- TOEGEVOEGD: Bereken delta (fasehoek) voor de Terminal Slope check ---
             d['delta'] = np.degrees(np.arctan2(d['Gpp'], d['Gp']))
             m_list.append(d)
-        
-        # Maak één centrale mastercurve dataframe
-        m_df = pd.concat(m_list).sort_values('w_s')
-        
 
-        # --- 2. BEREKEN METRICS (Eén keer uitvoeren) ---
-        eta0, gn0, fit_params, fit_success = calculate_rheo_metrics(m_df)
-        
-        # 1. Terminal Slope Verbetering (Professor's Delta > 75 graden criterium)
+        m_df = pd.concat(m_list).sort_values('w_s')
+
+        # ============================================================
+        # BEREKENINGEN (1x voor consistentie)
+        # ============================================================
+
+        # 1. Arrhenius & WLF
+        t_k_global = np.array([t + 273.15 for t in selected_temps])
+        log_at_global = np.array([st.session_state.shifts[t] for t in selected_temps])
+        tr_k_global = ref_temp + 273.15
+
+        inv_t_global = 1/t_k_global
+        slope_g, intercept_g = np.polyfit(inv_t_global, log_at_global, 1)
+        ea_final = float(abs(slope_g * 8.314 * np.log(10) / 1000))
+
+        # R² en Adjusted R²
+        residuals = log_at_global - (slope_g * inv_t_global + intercept_g)
+        ss_res = np.sum(residuals**2)
+        ss_tot = np.sum((log_at_global - np.mean(log_at_global))**2)
+        r2_final = float(1 - ss_res/ss_tot)
+
+        n_points = len(log_at_global)
+        r2_adj = 1 - (1 - r2_final) * (n_points - 1) / max(n_points - 2, 1)
+
+        # WLF
+        def wlf_model(p, t, tr): 
+            return -p[0]*(t-tr) / (p[1] + (t-tr))
+
+        def wlf_err(p): 
+            return np.sum((log_at_global - wlf_model(p, t_k_global, tr_k_global))**2)
+
+        c2_init = max(50.0, ref_temp - tg_hint)
+        res_wlf = minimize(wlf_err, x0=[17.4, c2_init], bounds=[(1, 50), (10, 200)])
+        wlf_c1, wlf_c2 = res_wlf.x
+
+        # 2. VFT Fit
+        def vft_model(T, A, B, T0):
+            return A + B / (T - T0)
+
+        vft_success = False
+        try:
+            p0_vft = [-10, 500, (tg_hint + 273.15) - 50]
+            lower_b = [-np.inf, 10, 50]
+            upper_b = [np.inf, 5000, min(t_k_global) - 5]
+            popt_vft, _ = curve_fit(vft_model, t_k_global, log_at_global, 
+                                    p0=p0_vft, bounds=(lower_b, upper_b), maxfev=10000)
+            vft_success = True
+        except:
+            popt_vft = [np.nan, np.nan, np.nan]
+
+        # VFT T∞ (Verbeterde berekening)
+        if vft_success:
+            t_inf_c = popt_vft[2] - 273.15
+            t_inf_info = "VFT gefitte Vogel temp"
+        else:
+            t_inf_c = ref_temp - wlf_c2
+            t_inf_info = "Geschat (T_ref - C2)"
+
+        # 3. Rheologische Metrics (η₀, Gₙ⁰, Terminal Slope)
+        eta0, gn0_raw, fit_params, fit_success = calculate_rheo_metrics(m_df)
+
+        # Herbereken Gₙ⁰ met info (voor dashboard)
+        plateau_zone = m_df[m_df['Gp'] > 2 * m_df['Gpp']]
+        if len(plateau_zone) > 3:
+            gn0 = plateau_zone['Gp'].median()
+            gn0_info = "Mediaan elastisch regime (G' > 2G'')"
+        else:
+            gn0 = m_df['Gp'].max()
+            gn0_info = "Max G' (plateau niet bereikt)"
+
+        # Terminal Slope (Robuuste versie)
         cutoff_freq = m_df['w_s'].quantile(0.3)
         terminal_zone = m_df[(m_df['delta'] > 75) & (m_df['w_s'] <= cutoff_freq)]
-        if len(terminal_zone) >= 2:
-            slope_term = np.polyfit(np.log10(terminal_zone['w_s']),
+
+        if len(terminal_zone) >= 3:
+            slope_term = np.polyfit(np.log10(terminal_zone['w_s']), 
                                     np.log10(terminal_zone['Gp']), 1)[0]
+            slope_info = f"Berekend uit {len(terminal_zone)} punten (δ>75°, laagste 30% freq)"
         else:
             slope_term = np.nan
+            slope_info = "Onvoldoende data voor terminal zone"
 
+        # 4. Crossovers (Gebruik verbeterde functie)
+        co_list = []
+        for t in selected_temps:
+            d_t = df[df['T_group'] == t].sort_values('omega')
+            crossovers = find_all_crossovers(d_t['omega'].values, d_t['Gp'].values, d_t['Gpp'].values)
+            
+            if crossovers:
+                # Neem eerste crossover voor de tabel
+                co_list.append({
+                    'T (°C)': t, 
+                    'Crossover ω (rad/s)': round(crossovers[0]['omega'], 2), 
+                    'G=G\'\' (Pa)': round(crossovers[0]['modulus'], 0),
+                    'Aantal crossovers': len(crossovers)
+                })
 
-        # Vul de summary tabel voor het dashboard
+        co_df = pd.DataFrame(co_list)
+
+        # Master Curve Crossovers (voor dashboard)
+        all_cos_master = find_all_crossovers(m_df['w_s'].values, m_df['Gp'].values, m_df['Gpp'].values)
+        num_cos = len(all_cos_master)
+
+        # 5. Softening Point (voor Tab 4)
+        t_smooth = np.linspace(min(selected_temps)-10, max(selected_temps)+10, 150)
+        t_smooth_k = t_smooth + 273.15
+        y_arr = slope_g*(1/t_smooth_k) + intercept_g
+        y_wlf = wlf_model([wlf_c1, wlf_c2], t_smooth_k, tr_k_global)
+
+        diff = np.abs(y_arr - y_wlf)
+        softening_idx = np.argmin(diff)
+        t_softening = t_smooth[softening_idx]
+
+        # ============================================================
+        # SUMMARY TABEL (voor export)
+        # ============================================================
         summ_df = pd.DataFrame([
             {'Parameter': 'Activatie Energie (Ea)', 'Waarde': f"{ea_final:.2f}", 'Eenheid': 'kJ/mol'},
-            {'Parameter': 'Zero Shear Viscosity', 'Waarde': f"{eta0:.2e}", 'Eenheid': 'Pa·s'},
+            {'Parameter': 'Zero Shear Viscosity (η₀)', 'Waarde': f"{eta0:.2e}" if not np.isnan(eta0) else "N/A", 'Eenheid': 'Pa·s'},
+            {'Parameter': 'Plateau Modulus (Gₙ⁰)', 'Waarde': f"{gn0:.2e}" if not np.isnan(gn0) else "N/A", 'Eenheid': 'Pa'},
             {'Parameter': 'WLF C1', 'Waarde': f"{wlf_c1:.2f}", 'Eenheid': '-'},
-            {'Parameter': 'Terminal Slope G\'', 'Waarde': f"{slope_term:.2f}", 'Eenheid': '-'}
+            {'Parameter': 'WLF C2', 'Waarde': f"{wlf_c2:.2f}", 'Eenheid': 'K'},
+            {'Parameter': 'Terminal Slope G\'', 'Waarde': f"{slope_term:.2f}" if not np.isnan(slope_term) else "N/A", 'Eenheid': '-'},
+            {'Parameter': 'Arrhenius R²', 'Waarde': f"{r2_final:.4f}", 'Eenheid': '-'},
+            {'Parameter': 'Adjusted R²', 'Waarde': f"{r2_adj:.4f}", 'Eenheid': '-'}
         ])
 
         # --- 3. TABS STARTEN ---
@@ -643,126 +707,210 @@ if uploaded_file:
         with tab7:
             st.header("📊 Expert Dashboard")
 
-            # --- STAP 1: CONSOLIDATIE BEREKENINGEN (Achter de schermen) ---
-            
-            # 1. Plateau Modulus (G_N^0)
-            plateau_zone = m_df[m_df['Gp'] > 2 * m_df['Gpp']]
-            if len(plateau_zone) > 3:
-                gn0 = plateau_zone['Gp'].median()
-                gn0_info = "Mediaan elastisch regime"
-            else:
-                gn0 = m_df['Gp'].max()
-                gn0_info = "Max G' (geen duidelijke plateau)"
-
-            # 2. Crossover Analyse
-            all_cos = find_all_crossovers(m_df['w_s'].values, m_df['Gp'].values, m_df['Gpp'].values)
-            num_cos = len(all_cos)
-            primary_co_mod = all_cos[0]['modulus'] if all_cos else np.nan
-            
-            # 3. Adjusted R² voor Arrhenius (eerlijkere statistiek)
-            n_points = len(log_at_global)
-            p = 1
-            r2_adj = 1 - (1 - r2_final) * (n_points - 1) / max(n_points - p - 1, 1)
-
-            # VFT BEREKENING
-            T_ref_K = ref_temp + 273.15
-            if not np.isnan(wlf_c2):
-                t_inf = T_ref_K - wlf_c2  
-                t_inf_c = t_inf - 273.15
-            else:
-                t_inf_c = np.nan
-            # --- STAP 2: UI - KPI QUICK-LOOK (Slechts één keer) ---
+            # --- KPI METRICS (Gebruik al berekende waarden) ---
             col_a, col_b, col_c, col_d = st.columns(4)
             col_a.metric("Flow Activation (Ea)", f"{ea_final:.1f} kJ/mol")
             col_b.metric("Zero Shear (η₀)", f"{eta0:.2e} Pa·s" if not np.isnan(eta0) else "N/A")
-            col_c.metric("TTS Adj. R²", f"{r2_adj:.4f}", help="Gecorrigeerd voor het aantal datapunten")
-            col_d.metric("Crossovers", f"{num_cos}", delta="Complex" if num_cos > 1 else None)
+            col_c.metric("TTS Adj. R²", f"{r2_adj:.4f}", help="Gecorrigeerd voor aantal datapunten")
+            col_d.metric("Crossovers", f"{num_cos}", delta="Complex" if num_cos > 1 else "Simpel")
 
             st.divider()
 
-            # --- STAP 3: GLOBALE PARAMETER TABEL (Geconsolideerd) ---
-            st.subheader("📋 1. Globale Rheologische Parameters")
+            # --- GLOBALE PARAMETERS ---
+            st.subheader("📋 Rheologische Parameters")
             
             dashboard_data = [
-                {"Categorie": "Thermisch", "Parameter": "Activatie Energie (Ea)", "Waarde": f"{ea_final:.2f}", "Eenheid": "kJ/mol", "Info": "Gevoeligheid voor T-veranderingen"},
-                {"Categorie": "Thermisch", "Parameter": "WLF C1 (Logat)", "Waarde": f"{wlf_c1:.2f}", "Eenheid": "-", "Info": "Vrije volume factor"},
-                {"Categorie": "Thermisch", "Parameter": "WLF C2", "Waarde": f"{wlf_c2:.2f}", "Eenheid": "K", "Info": "Afstand tot Tg"},
-                {"Categorie": "Thermisch", "Parameter": "VFT T∞ (Vogel Temp)", "Waarde": f"{t_inf_c:.1f}", "Eenheid": "°C", "Info": "Temp. waarbij mobiliteit stopt"},
-                {"Categorie": "Viscositeit", "Parameter": "Zero Shear Viscosity (η₀)", "Waarde": f"{eta0:.2e}", "Eenheid": "Pa·s", "Info": "Maat voor Mw en processtabiliteit"},
-                {"Categorie": "Viscositeit", "Parameter": "Relaxatietijd (τ)", "Waarde": f"{fit_params[1]:.3f}" if fit_success else "N/A", "Eenheid": "s", "Info": "Gemiddelde keten-ontwarringstijd"},
-                {"Categorie": "Structuur", "Parameter": "Terminal Slope G'", "Waarde": f"{slope_term:.2f}", "Eenheid": "-", "Info": "Vloeigedrag (Ideaal = 2.0)"},
-                {"Categorie": "Structuur", "Parameter": "Plateau Modulus (Gₙ⁰)", "Waarde": f"{gn0:.2e}", "Eenheid": "Pa", "Info": gn0_info},
-                {"Categorie": "Validatie", "Parameter": "Adjusted R²", "Waarde": f"{r2_adj:.4f}", "Eenheid": "-", "Info": "Betrouwbaarheid Arrhenius fit"},
+                {"Categorie": "Thermisch", "Parameter": "Activatie Energie (Ea)", 
+                "Waarde": f"{ea_final:.2f}", "Eenheid": "kJ/mol", 
+                "Info": "Vloei-activatie energie (hoe T-gevoelig)"},
+                
+                {"Categorie": "Thermisch", "Parameter": "WLF C₁", 
+                "Waarde": f"{wlf_c1:.2f}", "Eenheid": "-", 
+                "Info": "Vrije volume parameter"},
+                
+                {"Categorie": "Thermisch", "Parameter": "WLF C₂", 
+                "Waarde": f"{wlf_c2:.2f}", "Eenheid": "K", 
+                "Info": "Temp-afstand tot Tg (universeel ~51.6K)"},
+                
+                {"Categorie": "Thermisch", "Parameter": "VFT T∞ (Vogel Temp)", 
+                "Waarde": f"{t_inf_c:.1f}", "Eenheid": "°C", 
+                "Info": t_inf_info},
+                
+                {"Categorie": "Thermisch", "Parameter": "Geschatte Tg", 
+                "Waarde": f"{t_inf_c + 50:.1f}", "Eenheid": "°C", 
+                "Info": "T∞ + 50K regel voor TPU"},
+                
+                {"Categorie": "Viscositeit", "Parameter": "Zero Shear Viscosity (η₀)", 
+                "Waarde": f"{eta0:.2e}" if not np.isnan(eta0) else "N/A", "Eenheid": "Pa·s", 
+                "Info": "Processtabiliteits-indicator (~ M_w^3.4)"},
+                
+                {"Categorie": "Viscositeit", "Parameter": "Relaxatietijd (τ)", 
+                "Waarde": f"{fit_params[1]:.3f}" if fit_success else "N/A", "Eenheid": "s", 
+                "Info": "Keten-ontwarringstijd uit Cross model"},
+                
+                {"Categorie": "Structuur", "Parameter": "Terminal Slope G'", 
+                "Waarde": f"{slope_term:.2f}" if not np.isnan(slope_term) else "N/A", "Eenheid": "-", 
+                "Info": slope_info + " (Ideaal: 2.0)"},
+                
+                {"Categorie": "Structuur", "Parameter": "Plateau Modulus (Gₙ⁰)", 
+                "Waarde": f"{gn0:.2e}" if not np.isnan(gn0) else "N/A", "Eenheid": "Pa", 
+                "Info": gn0_info},
+                
+                {"Categorie": "Structuur", "Parameter": "Crossover Punten", 
+                "Waarde": f"{num_cos}", "Eenheid": "-", 
+                "Info": "Aantal G'=G'' kruisingen (>1 → complex)"},
+                
+                {"Categorie": "Validatie", "Parameter": "Arrhenius R²", 
+                "Waarde": f"{r2_final:.4f}", "Eenheid": "-", 
+                "Info": "Lineaire fit kwaliteit"},
+                
+                {"Categorie": "Validatie", "Parameter": "Adjusted R²", 
+                "Waarde": f"{r2_adj:.4f}", "Eenheid": "-", 
+                "Info": "R² gecorrigeerd voor # datapunten"}
             ]
             
             summary_table_df = pd.DataFrame(dashboard_data)
             st.table(summary_table_df)
 
-            # --- STAP 4: VALIDATIE & DIAGNOSE ---
-            st.subheader("🔍 2. Model Betrouwbaarheid & Diagnose")
+            # --- MODEL VALIDATIE ---
+            st.subheader("🔍 Model Betrouwbaarheid")
             
             check_col1, check_col2 = st.columns(2)
             
             with check_col1:
-                st.write("**Model Validatie:**")
-                # WLF Check
+                st.write("**Thermische Modellen:**")
+                
+                # WLF Validatie
                 if wlf_c1 < 0 or wlf_c2 < 0:
-                    st.error(f"❌ **WLF Fysiek Onmogelijk:** De gevonden waarden zijn natuurkundig incorrect voor een smelt.")
+                    st.error("❌ **WLF Ongeldig:** Negatieve constanten zijn fysisch onmogelijk.")
                 elif wlf_c1 < 5 or wlf_c1 > 30:
-                    st.warning(f"⚠️ **WLF Onwaarschijnlijk:** De waarden wijken sterk af. Mogelijk thermorheologisch complex.")
+                    st.warning(f"⚠️ **WLF Atypisch:** C₁={wlf_c1:.1f} wijkt af van normaal bereik (8-17). Mogelijk thermorheologisch complex.")
                 else:
-                    st.success("✅ **WLF Stabiel:** Parameters binnen normaal bereik.")
-
-                # Arrhenius Check
-                if r2_final > 0.98:
-                    st.success(f"✅ **Arrhenius dominant:** Uitstekende lineaire fit (R²: {r2_final:.4f}).")
-                else:
-                    st.warning(f"⚠️ **Arrhenius afwijking:** R² is {r2_final:.4f}. Let op fase-overgangen.")
+                    st.success(f"✅ **WLF Stabiel:** C₁={wlf_c1:.1f}, C₂={wlf_c2:.0f}K binnen normaal bereik.")
                 
-                st.write("**VFT / Glasovergang:**")
-                if t_inf_c > 0: # Voor TPU is T_inf meestal ver onder 0°C
-                    st.warning(f"⚠️ **Hoge T∞:** {t_inf_c:.1f} °C. Dit is ongebruikelijk voor TPU zachte segmenten. Controleer de shift factors.")
+                # Arrhenius
+                if r2_adj > 0.98:
+                    st.success(f"✅ **Arrhenius uitstekend:** Adj. R²={r2_adj:.4f}")
+                elif r2_adj > 0.90:
+                    st.info(f"ℹ️ **Arrhenius acceptabel:** Adj. R²={r2_adj:.4f}")
                 else:
-                    st.success(f"✅ **T∞ (VFT):** {t_inf_c:.1f} °C. Dit wijst op een Tg rond de {t_inf_c + 50:.1f} °C.")
+                    st.warning(f"⚠️ **Arrhenius zwak:** Adj. R²={r2_adj:.4f}. Mogelijk fase-overgangen.")
                 
-                st.caption("T∞ is de temperatuur waarbij alle moleculaire beweging stopt.")                                                                                                                 
+                # VFT/Tg check
+                if vft_success:
+                    estimated_tg = t_inf_c + 50
+                    st.info(f"🌡️ **Geschatte Tg:** {estimated_tg:.1f}°C (VFT T₀ + 50K)")
+                    
+                    if estimated_tg > ref_temp:
+                        st.warning(f"⚠️ **Let op:** Geschatte Tg ({estimated_tg:.1f}°C) ligt boven je referentie temp ({ref_temp}°C). Dit is fysisch onmogelijk - check je data!")
+                else:
+                    st.caption("VFT fit niet succesvol - T∞ geschat via WLF.")
 
             with check_col2:
-                st.write("**Professor's Diagnose:**")
-                # Vloeigedrag
-                if not np.isnan(slope_term) and slope_term < 1.7:
-                    st.error(f"⚠️ **Vloeiprobleem:** Lage slope ({slope_term:.2f}) duidt op onvolledige smelt of crosslinking.")
-                else:
-                    st.success("✅ **Goede smeltkwaliteit:** Materiaal vloeit Newtoniaans.")
+                st.write("**Structurele Kwaliteit:**")
                 
-                # Mw/Hydrolyse indicatie
-                st.info(f"🧬 **Mw Indicatie:** η₀ = {eta0:.1e} Pa·s. Gebruik dit als referentie tegen hydrolyse bij volgende batches.")
+                # Terminal Slope
+                if not np.isnan(slope_term):
+                    if slope_term < 1.5:
+                        st.error(f"❌ **Vloeiprobleem:** Slope={slope_term:.2f} << 2.0 → onvolledige smelt of crosslinking")
+                    elif slope_term < 1.8:
+                        st.warning(f"⚠️ **Afwijkende vloei:** Slope={slope_term:.2f} → lichte structurele belemmering")
+                    else:
+                        st.success(f"✅ **Newtoniaans gedrag:** Slope={slope_term:.2f} ≈ 2.0")
+                else:
+                    st.info("ℹ️ Terminal zone niet bereikt (geen datapunten met δ>75° bij lage freq)")
+                
+                # Crossover complexiteit
+                if num_cos == 0:
+                    st.warning("⚠️ **Geen crossover:** G' > G'' over hele bereik (sterk elastisch)")
+                elif num_cos == 1:
+                    st.success("✅ **Enkelvoudig crossover:** Klassiek thermorheologisch simpel gedrag")
+                else:
+                    st.error(f"❌ **{num_cos} crossovers:** Thermorheologisch complex! Controleer Van Gurp-Palmen plot.")
+                
+                # Hydrolyse waarschuwing
+                if not np.isnan(eta0):
+                    st.info(f"💧 **Hydrolyse Check:** η₀={eta0:.1e} Pa·s. Gebruik als referentie voor toekomstige batches.")
 
             st.divider()
 
-            # --- STAP 5: CROSSOVER & EXPORTS ---
-            st.subheader("⚖️ 3. Crossover Punten & Export")
+            # --- CROSSOVERS & EXPORT ---
+            st.subheader("⚖️ Crossover Punten")
             if not co_df.empty:
                 st.dataframe(co_df, use_container_width=True)
+                
+                if num_cos > 1:
+                    st.warning(f"""
+                    **🔬 Meerdere Crossovers Gedetecteerd ({num_cos}x):**
+                    Dit is een sterke indicatie van **fase-heterogeniteit** in je TPU. 
+                    Mogelijke oorzaken:
+                    - Hard-segment kristallisatie/smelten tijdens meting
+                    - Bi-modale molecuulgewichtsverdeling
+                    - Incomplete menging van soft/hard segmenten
+                    
+                    → Controleer de **Van Gurp-Palmen plot** (Tab 2) voor visuele bevestiging.
+                    """)
+            else:
+                st.info("Geen crossover punten gevonden (G' > G'' of G' < G'' over gehele bereik)")
+
+            st.divider()
+            st.subheader("💾 Data Export")
             
             col_ex1, col_ex2, col_ex3, col_ex4 = st.columns(4)
-            # Export buttons (gehouden zoals ze waren, maar nu netjes onderaan)
-            col_ex1.download_button("📊 Summary CSV", summary_table_df.to_csv(index=False).encode('utf-8'), f"{sample_name}_Summary.csv", "text/csv")
             
-            shift_export_df = pd.DataFrame({'T_C': selected_temps, 'log_aT': [st.session_state.shifts[t] for t in selected_temps]})
-            col_ex2.download_button("🕒 Shifts CSV", shift_export_df.to_csv(index=False).encode('utf-8'), f"{sample_name}_Shifts.csv", "text/csv")
+            # Summary export
+            col_ex1.download_button(
+                "📊 Parameters CSV", 
+                summary_table_df.to_csv(index=False).encode('utf-8'), 
+                f"{sample_name}_Parameters.csv", 
+                "text/csv"
+            )
+            
+            # Shift factors
+            shift_export_df = pd.DataFrame({
+                'T_C': selected_temps, 
+                'log_aT': [st.session_state.shifts[t] for t in selected_temps],
+                'aT': [10**st.session_state.shifts[t] for t in selected_temps]
+            })
+            col_ex2.download_button(
+                "🕒 Shift Factors CSV", 
+                shift_export_df.to_csv(index=False).encode('utf-8'), 
+                f"{sample_name}_ShiftFactors.csv", 
+                "text/csv"
+            )
 
+            # Crossovers
             if not co_df.empty:
-                col_ex3.download_button("⚖️ Crossovers CSV", co_df.to_csv(index=False).encode('utf-8'), f"{sample_name}_Crossovers.csv", "text/csv")
+                col_ex3.download_button(
+                    "⚖️ Crossovers CSV", 
+                    co_df.to_csv(index=False).encode('utf-8'), 
+                    f"{sample_name}_Crossovers.csv", 
+                    "text/csv"
+                )
 
-            # Master Curve Export
-            gewenste_kolommen = {'w_s': 'omega_shifted_rad_s', 'Gp': 'Gp_Pa', 'Gpp': 'Gpp_Pa', 'eta_s': 'Complex_Visc_Pas', 'delta': 'PhaseAngle_deg', 'T_group': 'Original_T_C'}
+            # Master Curve data
+            gewenste_kolommen = {
+                'w_s': 'omega_shifted_rad_s',
+                'Gp': 'Gp_Pa',
+                'Gpp': 'Gpp_Pa',
+                'eta_s': 'Complex_Visc_Pas',
+                'delta': 'PhaseAngle_deg',
+                'T_group': 'Original_T_C'
+            }
+            
             beschikbare_kolommen = [k for k in gewenste_kolommen.keys() if k in m_df.columns]
             master_export_df = m_df[beschikbare_kolommen].copy().rename(columns=gewenste_kolommen)
-            if 'Gp' in m_df.columns and 'Gpp' in m_df.columns:
-                master_export_df['tan_delta'] = m_df['Gpp'] / m_df['Gp']
             
-            col_ex4.download_button("📈 Master Curve CSV", master_export_df.to_csv(index=False).encode('utf-8'), f"{sample_name}_MasterCurve.csv", "text/csv")
+            if 'Gp_Pa' in master_export_df.columns and 'Gpp_Pa' in master_export_df.columns:
+                master_export_df['tan_delta'] = master_export_df['Gpp_Pa'] / master_export_df['Gp_Pa']
+                master_export_df['G_star_Pa'] = np.sqrt(master_export_df['Gp_Pa']**2 + master_export_df['Gpp_Pa']**2)
+            
+            col_ex4.download_button(
+                "📈 Master Curve CSV", 
+                master_export_df.to_csv(index=False).encode('utf-8'), 
+                f"{sample_name}_MasterCurve.csv", 
+                "text/csv"
+            )
     else:
         st.error("❌ Geen data gevonden in het bestand. Controleer het bestandsformaat.")
 else:
