@@ -336,6 +336,51 @@ if uploaded_file:
                 ax1.legend(ncol=2, fontsize=8)
                 ax1.grid(True, alpha=0.1)
                 st.pyplot(fig1)
+
+                st.subheader("💾 Smooth Export")
+            
+                # Spline logic
+                m_list = []
+                for t in selected_temps:
+                    d = df[df['T_group'] == t].copy()
+                    at = 10**st.session_state.shifts[t]
+                    d['w_s'] = d['omega'] * at
+                    d['eta_s'] = np.sqrt(d['Gp']**2 + d['Gpp']**2) / d['w_s']
+                    m_list.append(d)
+                
+                
+                m_df = pd.concat(m_list).sort_values('w_s')
+                s_val = st.slider("Smoothing Sterkte", 0.0, 2.0, 0.4)
+                
+                eta0, gn0, fit_params, fit_success = calculate_rheo_metrics(m_df)
+
+                log_w = np.log10(m_df['w_s'])
+                log_eta = np.log10(m_df['eta_s'])
+                spl = UnivariateSpline(log_w, log_eta, s=s_val)
+                
+                w_new = np.logspace(log_w.min(), log_w.max(), 50)
+                eta_new = 10**spl(np.log10(w_new))
+                
+                fig_s, ax_s = plt.subplots()
+                ax_s.loglog(m_df['w_s'], m_df['eta_s'], 'k.', alpha=0.1, label='Raw data')
+                ax_s.loglog(w_new, eta_new, 'r-', linewidth=2, label='Smoothed')
+                ax_s.set_xlabel("ω·aT (rad/s)")
+                ax_s.set_ylabel("η* (Pa·s)")
+                ax_s.legend()
+                ax_s.grid(True, alpha=0.3)
+                st.pyplot(fig_s)
+                
+                csv = pd.DataFrame({
+                    'omega_shifted': w_new, 
+                    'eta_complex': eta_new
+                }).to_csv(index=False).encode('utf-8')
+                
+                st.download_button(
+                    "Download Smooth CSV", 
+                    csv, 
+                    "mastercurve.csv",
+                    mime="text/csv"
+                )
             
             with col_m2:
                 st.write("**Shift Factor Trend**")
