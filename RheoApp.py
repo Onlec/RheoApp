@@ -500,7 +500,8 @@ if uploaded_file:
                 
                 # De Softening Point metric
                 st.metric("Estimated Softening Point", f"{t_softening:.1f} °C")
-                
+                st.metric("**VFT T₀ (Vogel):**", f"{popt_vft[2]-273.15:.1f} °C" if vft_success else "VFT: N/A")
+                st.metric("**WLF C1 / C2:**",f"{wlf_c1:.1f} / {wlf_c2:.1f}")
                 # --- DYNAMISCHE VALIDATIE ---
                 st.write("---")
                 st.write("**Referentie T Validatie:**")
@@ -525,9 +526,7 @@ if uploaded_file:
                 elif r2_final < 0.90:
                     st.warning(f"📉 Zwakke fit (R²={r2_final:.3f}). De shift-factors volgen geen standaard thermisch model.")
 
-                with st.expander("🔬 Model Parameters"):
-                    st.write(f"**VFT T₀ (Vogel):** {popt_vft[2]-273.15:.1f} °C" if vft_success else "VFT: N/A")
-                    st.write(f"**WLF C1 / C2:** {wlf_c1:.1f} / {wlf_c2:.1f}")
+                    
 
                 st.markdown(f"""
                 <div style="background-color: #f0f2f6; padding: 15px; border-radius: 10px; border-left: 5px solid #ffa500;">
