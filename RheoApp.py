@@ -641,16 +641,37 @@ if uploaded_file:
             if not co_df.empty:
                 col_ex3.download_button("⚖️ Crossovers CSV", co_df.to_csv(index=False).encode('utf-8'), f"Crossovers_{sample_name}.csv", "text/csv")
 
-            # 4. Master Curve CSV (Nu met extra check op kolommen)
-            # Bereken tan_delta nog even snel voor de export
-            m_df['tan_delta'] = m_df['Gpp'] / m_df['Gp']
-            
-            export_cols = ['w_s', 'Gp', 'Gpp', 'eta_s', 'delta', 'tan_delta', 'T_group']
-            master_export_df = m_df[export_cols].copy()
-            master_export_df.columns = ['omega_shifted_rad_s', 'Gp_Pa', 'Gpp_Pa', 'Complex_Visc_Pas', 'PhaseAngle_deg', 'tan_delta', 'Original_T_C']
-            
-            col_ex4.download_button("📈 Master Curve CSV", master_export_df.to_csv(index=False).encode('utf-8'), f"MasterCurve_{sample_name}.csv", "text/csv")
+            # --- 4. Master Curve CSV (Foutbestendige versie) ---
+            # We definiëren welke kolommen we ZOUDEN WILLEN hebben
+            gewenste_kolommen = {
+                'w_s': 'omega_shifted_rad_s',
+                'Gp': 'Gp_Pa',
+                'Gpp': 'Gpp_Pa',
+                'eta_s': 'Complex_Visc_Pas',
+                'delta': 'PhaseAngle_deg',
+                'T_group': 'Original_T_C'
+            }
 
+            # Check welke van deze kolommen daadwerkelijk in m_df zitten
+            beschikbare_kolommen = [k for k in gewenste_kolommen.keys() if k in m_df.columns]
+            
+            # Maak de export dataframe enkel met wat we hebben
+            master_export_df = m_df[beschikbare_kolommen].copy()
+            
+            # Hernoem de kolommen naar de nette namen
+            master_export_df = master_export_df.rename(columns=gewenste_kolommen)
+            
+            # Voeg tan_delta handmatig toe als Gp en Gpp er zijn (vaak berekend)
+            if 'Gp' in m_df.columns and 'Gpp' in m_df.columns:
+                master_export_df['tan_delta'] = m_df['Gpp'] / m_df['Gp']
+            
+            csv_master = master_export_df.to_csv(index=False).encode('utf-8')
+            col_ex4.download_button(
+                label="📈 Master Curve CSV",
+                data=csv_master,
+                file_name=f"MasterCurve_{sample_name}.csv",
+                mime="text/csv"
+            )
     else:
         st.error("❌ Geen data gevonden in het bestand. Controleer het bestandsformaat.")
 else:
