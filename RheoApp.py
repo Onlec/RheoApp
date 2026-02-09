@@ -6,43 +6,28 @@ import matplotlib as mpl
 from scipy.optimize import minimize, curve_fit
 from scipy.interpolate import interp1d, UnivariateSpline
 from io import BytesIO
-
 from translations import get_translations
 
 
-from translations import get_translations
-
+# --- CONFIGURATIE & STYLING ---
+st.set_page_config(page_title="RheoApp - TPU Rheology Expert Tool", layout="wide")
 # --- 1. TAAL INITIALISATIE (MOET BOVENAAN) ---
 if 'lang' not in st.session_state:
-    st.session_state.lang = 'EN'
+    st.session_state.lang = 'EN'  # Default to English
 
 # Haal de vertalingen op
 all_translations = get_translations()
 
-# De 'texts' variabele veilig vullen met een fallback naar NL als er iets misgaat
+# De 'texts' variabele veilig vullen met een fallback
 texts = all_translations.get(st.session_state.lang, all_translations["EN"])
 
-# --- 2. SIDEBAR SWITCHER ---
-with st.sidebar:
-    st.title("🌐 Language / Taal")
-    lang_choice = st.selectbox(
-        "Select Language", 
-        ["Nederlands", "English"], 
-        index=0 if st.session_state.lang == 'NL' else 1,
-        key="lang_selector" # Unieke key voorkomt dubbele initialisatie
-    )
-    
-    # Update de taal als de gebruiker wisselt
-    new_lang = "NL" if lang_choice == "Nederlands" else "EN"
-    if new_lang != st.session_state.lang:
-        st.session_state.lang = new_lang
-        st.rerun() # Forceer een refresh om de nieuwe taal direct te laden
 
+st.title(texts["title"])
+st.caption(texts["caption"])
 
-# --- CONFIGURATIE & STYLING ---
-st.set_page_config(page_title="RheoApp", layout="wide")
-st.title(texts["app_title"])
-st.caption("-Rheologie is 50% meten en 50% gezond verstand.")
+# DISCLAIMER
+with st.expander(texts["disclaimer_title"]):
+    st.warning(texts["disclaimer_text"])
 # Custom CSS voor betere leesbaarheid van expert-notes
 st.markdown("""
     <style>
@@ -223,8 +208,26 @@ def find_all_crossovers(omega, Gp, Gpp):
     return crossovers
 
 
-# --- SIDEBAR ---
-st.sidebar.title("Control Panel")
+# --- 2. SIDEBAR LANGUAGE SWITCHER ---
+st.sidebar.title("🌐 Language / Taal")
+lang_choice = st.sidebar.selectbox(
+    "Select Language", 
+    ["English", "Nederlands"], 
+    index=0 if st.session_state.lang == 'EN' else 1,
+    key="lang_selector"
+)
+
+# Update de taal als de gebruiker wisselt
+new_lang = "EN" if lang_choice == "English" else "NL"
+if new_lang != st.session_state.lang:
+    st.session_state.lang = new_lang
+    st.rerun()
+
+st.sidebar.divider()
+
+# --- 3. SIDEBAR CONTROLS ---
+st.sidebar.title(texts["sidebar_title"])
+st.sidebar.caption(texts["sidebar_caption"])
 uploaded_file = st.sidebar.file_uploader("Upload frequency sweep CSV/TXT", type=['csv', 'txt'])
 
 if uploaded_file:
@@ -432,6 +435,17 @@ if uploaded_file:
             {'Parameter': 'Adjusted R²', 'Waarde': f"{r2_adj:.4f}", 'Eenheid': '-'}
         ])
 
+
+        st.sidebar.divider()
+        st.sidebar.info("""
+        **📚 Hulp Nodig?**
+        
+        Bekijk de sidebar pages:
+        - 🌡️ Theorie & Modellen
+        - 🧪 Interpretatie Gids  
+        - ⚙️ Data & Troubleshooting
+        """)
+
         # --- 3. TABS STARTEN ---
         st.subheader(f"Sample: {sample_name}")
         tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
@@ -441,7 +455,17 @@ if uploaded_file:
             ])
 
         with tab1:
-            st.subheader(f"Master Curve bij {ref_temp}°C")
+            st.subheader(f"Master Curve bij {ref_temp}°C")            
+            st.info("""
+            **💡 Wat zie je hier?**
+            
+            De Master Curve combineert data van verschillende temperaturen door ze te verschuiven langs de frequentie-as.
+            Als de curves **perfect overlappen**, is je materiaal **thermorheologisch simpel** en is TTS geldig.
+            
+            -> Voor meer uitleg over TTS: Zie **🌡️ Theorie & Modellen** in de sidebar
+            """)
+            
+
             col_m1, col_m2 = st.columns([2, 1])
             
             with col_m1:
@@ -503,7 +527,19 @@ if uploaded_file:
                 st.info("💡 Een lineaire trend wijst op Arrhenius gedrag; een sterke kromming op WLF.")
 
         with tab2:
-            st.subheader("Van Gurp-Palmen (vGP) Analyse")
+            st.subheader("Van Gurp-Palmen (vGP) Structuuranalyse")
+            
+            st.markdown("""
+            ### 🎯 Wat is dit?
+            
+            De vGP plot is de **'vingerafdruk'** van je materiaalstructuur. Het plot de fasehoek (δ) tegen 
+            de complexe modulus (|G*|). Omdat deze beide grootheden intrinsiek zijn (niet afhankelijk van frequentie-schaal),
+            **MOETEN** alle temperatuur-curves samenvallen als je materiaal thermorheologisch simpel is.
+            
+            **💡 Dit is de ultieme TTS validatie test!**
+            
+            -> Voor gedetailleerde interpretatie: Zie **🧪 Interpretatie Gids** in de sidebar
+            """)
             st.markdown("""
             > **Expert Interpretatie:** Deze plot is de 'vingerafdruk' van de structuur. 
             > * **Overlappende lijnen:** Thermorheologisch eenvoudig (homogene smelt).
@@ -522,6 +558,21 @@ if uploaded_file:
             ax3.grid(True, which="both", alpha=0.2)
             ax3.legend("Meettemperatuur")
             st.pyplot(fig3)
+            
+            if len(selected_temps) > 1:
+                st.warning("""
+                ⚠️ **TPU Realiteit Check:**
+                
+                Als je hier duidelijke **'trappen'** of **verschuivingen** tussen de kleuren ziet:
+                - Dit verklaart waarom je mogelijk **negatieve WLF C₁** waarden krijgt
+                - Het materiaal is **thermorheologisch complex** in dit T-bereik
+                - Harde segmenten smelten niet uniform
+                
+                -> **Oplossing:** Kies T_ref > Softening Point (zie Tab 4) of gebruik alleen Arrhenius model
+                
+                -> **Meer info:** Ga naar **🧪 Interpretatie Gids** -> **Scenario's** -> "Negatieve WLF C₁"
+                """)
+
 
             st.markdown("### 🔍 Morfologische Diagnose")
             
@@ -551,7 +602,20 @@ if uploaded_file:
             ax_tan.legend(ncol=2, fontsize=8)
             ax_tan.grid(True, alpha=0.2)
             st.pyplot(fig_tan)
-            st.info("💡 Peaks in tan δ geven karakteristieke relaxatietijden aan. Bij TPU zie je vaak een verschuiving die duidt op de beweeglijkheid van de zachte segmenten.")
+            
+            st.markdown("""
+            ### 💡 Interpretatie voor TPU
+            
+            | Observatie | Betekenis | Procesrelevantie |
+            |------------|-----------|------------------|
+            | **Peak bij lage ω** | Zachte segment relaxatie | Bepaalt elastische terugvering |
+            | **Peak verschuift met T** | Temperatuur-afhankelijke mobiliteit | Verwerkingsvenster instellen |
+            | **tan δ @ 1 Hz** | Balans bij typische proces-frequentie | Coating: <0.3 = vorm-stabiel |
+            | **Meerdere peaks** | Bi-modale relaxaties (soft/hard) | Typisch voor TPU (niet problematisch) |
+            
+            -> Voor meer details: Zie **🌡️ Theorie & Modellen** -> **Structurele Parameters**
+            """)
+
         with tab4:
             st.subheader("Thermische Karakterisatie: Arrhenius, WLF & VFT")
             
@@ -701,9 +765,45 @@ if uploaded_file:
             m2.metric("Plateau Modulus (Gₙ⁰)", f"{gn0:.2e} Pa" if not np.isnan(gn0) else "N/A")
             
             # Professor's Insight over Mw
+            
+            
             if not np.isnan(eta0):
-                # Voor TPU is de constante afhankelijk van de chemie, maar we tonen de trend
-                st.info(f"💡 **Moleculair Gewicht Trend:** η₀ is evenredig met $M_w^{{3.4}}$. Een stijging van 15% in η₀ duidt op een stijging van ca. 4% in $M_w$.")
+                st.markdown("### 🧬 Molecuulgewicht Relatie")
+                
+                mw_col1, mw_col2 = st.columns([2, 1])
+                
+                with mw_col1:
+                    st.info(f"""
+                    **η₀ ∝ M_w^3.4** (voor lineaire polymeren)
+                    
+                    Dit betekent dat η₀ **extreem gevoelig** is voor Mw veranderingen:
+                    
+                    | Δη₀ | ΔM_w (geschat) | Mogelijke Oorzaak |
+                    |-----|----------------|-------------------|
+                    | +15% | +4% | Langere ketens (polymerisatie controle?) |
+                    | -20% | -6% | **Hydrolyse!** (vocht in granulaat) |
+                    | -50% | -15% | **Ernstige degradatie** (thermisch of vocht) |
+                    
+                    **Gebruik als Kwaliteitscontrole:**
+                    Vergelijk η₀ tussen batches voor vroege detectie van hydrolyse!
+                    """)
+                
+                with mw_col2:
+                    st.success(f"""
+                    **Huidige η₀:**
+                    {eta0:.2e} Pa·s
+                    
+                    **Benchmark:**
+                    Sla deze waarde op als
+                    referentie voor toekomstige
+                    batches!
+                    
+                    **Typisch TPU:**
+                    - 10⁴-10⁵: Laag Mw
+                    - 10⁵-10⁶: Normaal
+                    - > 10⁶: Hoog Mw
+                    """)
+
 
             st.divider()
             
@@ -737,12 +837,12 @@ if uploaded_file:
             """, unsafe_allow_html=True)
             
         with tab7:
-            st.header(f"📊 {texts['summary_header']}")
+            st.header("📊 Expert Dashboard")
 
             # --- KPI METRICS (Gebruik al berekende waarden) ---
             col_a, col_b, col_c, col_d = st.columns(4)
-            col_a.metric(texts["ea_metric"], f"{ea_final:.1f} kJ/mol")
-            col_b.metric(texts["eta_metric"], f"{eta0:.2e} Pa·s" if not np.isnan(eta0) else "N/A")            
+            col_a.metric("Flow Activation (Ea)", f"{ea_final:.1f} kJ/mol")
+            col_b.metric("Zero Shear (η₀)", f"{eta0:.2e} Pa·s" if not np.isnan(eta0) else "N/A")
             col_c.metric("TTS Adj. R²", f"{r2_adj:.4f}", help="Gecorrigeerd voor aantal datapunten")
             col_d.metric("Crossovers", f"{num_cos}", delta="Complex" if num_cos > 1 else "Simpel")
 
@@ -814,7 +914,7 @@ if uploaded_file:
                 
                 # WLF Validatie
                 if wlf_c1 < 0 or wlf_c2 < 0:
-                    st.error("❌ **WLF Ongeldig:** Negatieve constanten zijn fysisch onmogelijk.")
+                    st.error("❌ **WLF Ongeldig:** Negatieve constanten zijn fysisch onmogelijk.\n\n-> Zie **🧪 Interpretatie Gids** -> **Scenario's** voor uitleg")
                 elif wlf_c1 < 5 or wlf_c1 > 30:
                     st.warning(f"⚠️ **WLF Atypisch:** C₁={wlf_c1:.1f} wijkt af van normaal bereik (8-17). Mogelijk thermorheologisch complex.")
                 else:
@@ -844,7 +944,7 @@ if uploaded_file:
                 # Terminal Slope
                 if not np.isnan(slope_term):
                     if slope_term < 1.5:
-                        st.error(f"❌ **Vloeiprobleem:** Slope={slope_term:.2f} << 2.0 → onvolledige smelt of crosslinking")
+                        st.error(f"❌ **Vloeiprobleem:** Slope={slope_term:.2f} << 2.0 -> onvolledige smelt of crosslinking\n\n-> **⚙️ Data & Troubleshooting** -> **Foutmeldingen**")
                     elif slope_term < 1.8:
                         st.warning(f"⚠️ **Afwijkende vloei:** Slope={slope_term:.2f} → lichte structurele belemmering")
                     else:
@@ -858,7 +958,7 @@ if uploaded_file:
                 elif num_cos == 1:
                     st.success("✅ **Enkelvoudig crossover:** Klassiek thermorheologisch simpel gedrag")
                 else:
-                    st.error(f"❌ **{num_cos} crossovers:** Thermorheologisch complex! Controleer Van Gurp-Palmen plot.")
+                    st.error(f"❌ **{num_cos} crossovers:** Thermorheologisch complex!\n\n-> **🧪 Interpretatie Gids** -> **Crossover Analyse**")
                 
                 # Hydrolyse waarschuwing
                 if not np.isnan(eta0):
@@ -945,35 +1045,62 @@ if uploaded_file:
             )
     else:
         st.error("❌ Geen data gevonden in het bestand. Controleer het bestandsformaat.")
-# Plaats dit onderaan in RheoApp.py (waar de instructies stonden)
 else:
     st.info("👆 Upload een frequency sweep CSV/TXT bestand om te beginnen.")
     
-    with st.expander("📖 Snelstartgids & Expert Workflow", expanded=True):
-        st.markdown("### 🚀 Hoe haal je het maximale uit RheoApp?")
+    with st.expander("ℹ️ **Gebruiksinstructies** - Hoe gebruik je RheoApp?"):
+        st.markdown("""
+        ## 🚀 Quick Start Guide
         
-        col_flow1, col_flow2 = st.columns(2)
+        ### 1. UPLOAD
+        - Klik **"Browse files"** in de sidebar
+        - Selecteer je frequency sweep data (CSV/TXT)
+        - Ondersteunde formaten: TA Instruments, Anton Paar, simpele CSV
+        - Sample naam wordt automatisch geëxtraheerd
         
-        with col_flow1:
-            st.markdown("""
-            **Stap 1: Data Integriteit 📂**
-            * Upload je bestand en check de kolommen.
-            * *Tip:* Zorg voor minimaal 5 temperaturen voor een stabiele WLF-fit.
-            * 🔗 **Zie [Page 3: Data Tips](Data_&_Troubleshooting)** voor de voorbereidings-checklist.
-
-            **Stap 2: De Referentie Toestand ⚙️**
-            * Kies je $T_{ref}$. Voor TPU adviseren we de hoogste T om ver weg te blijven van $T_g$.
-            * 🔗 **Zie [Page 1: Theorie](Theorie_&_Modellen)** voor de wiskunde achter $T_{ref}$.
-            """)
-
-        with col_flow2:
-            st.markdown("""
-            **Stap 3: Alignment & Validatie 🛠️**
-            * Gebruik **Auto-Align** en check de vGP Plot (Tab 2).
-            * *Acceptatie-criterium:* Liggen alle lijnen op één curve in vGP? Dan is TTS geldig.
-            * 🔗 **Zie [Page 2: Interpretatie](Interpretatie_Gids)** voor 'Red Flags' in vGP.
-
-            **Stap 4: Dashboard & Diagnose 🧠**
-            * Analyseer de moleculaire parameters in Tab 7.
-            * Vergelijk de resultaten met de **Typical TPU Values** op Page 1.
-            """)
+        ### 2. CONFIGURATIE
+        - **Selecteer Temperaturen:** Kies welke T's te gebruiken (minimaal 3)
+        - **Kies Referentie T:** Bij voorkeur **hoogste temperatuur** (boven softening point!)
+        - **Colormap:** Visuele voorkeur voor plots
+        - **Verwachte Tg:** Voor WLF hint (typisch TPU: -40°C)
+        
+        ### 3. ALIGNMENT (Shift Factors)
+        - **Optie A:** Klik **"🚀 Auto-Align"** voor automatische optimalisatie
+        - **Optie B:** Pas **handmatig** aan met sliders (voor fine-tuning)
+        - **Reset:** Klik "🔄 Reset" om opnieuw te beginnen
+        
+        ### 4. ANALYSE (7 Tabs)
+        
+        | Tab | Wat Check Je? | Belangrijkste Validatie |
+        |-----|---------------|-------------------------|
+        | **1. Master Curve** | Overlap van curves | Visuele TTS check |
+        | **2. Structuur (vGP)** | Thermorheologische eenvoud | **KRITIEK: Curves moeten samenvallen** |
+        | **3. tan δ** | Relaxatie spectrum | Crossover identificatie |
+        | **4. Thermisch** | Ea, WLF, VFT modellen | Softening Point vs T_ref |
+        | **5. TTS Validatie** | Han & Cole-Cole | Chemische stabiliteit & MWD |
+        | **6. Moleculair** | η₀, G_N⁰ extractie | Verwerkbaarheid parameters |
+        | **7. Dashboard** | Alle metrics + export | **START HIER voor overzicht** |
+        
+        ### 5. EXPORT
+        - Ga naar **Tab 7 (Dashboard)**
+        - Klik op de **4 export buttons**:
+          1. Parameters CSV (Ea, η₀, WLF, etc.)
+          2. Shift Factors CSV (per temperatuur)
+          3. Crossovers CSV
+          4. Master Curve CSV (alle punten)
+        
+        ---
+        
+        ## 📚 Hulp Nodig?
+        
+        **Bekijk de sidebar pages voor gedetailleerde uitleg:**
+        
+        - **🌡️ Theorie & Modellen:** Alle formules en fysische achtergrond
+        - **🧪 Interpretatie Gids:** Hoe lees je de grafieken? (vGP, Han, Cole-Cole)
+        - **⚙️ Data & Troubleshooting:** File formats, error messages, TPU meet-tips
+        
+        **Bij problemen:**
+        1. Check **Interpretatie Gids** -> **Praktijk Scenario's**
+        2. Bekijk **Data & Troubleshooting** -> **Foutmeldingen**
+        3. Valideer met **Theorie & Modellen** -> **Snelle Calculators**
+        """)
