@@ -6,4 +6,5 @@ matplotlib
 scipy
 xlsxwriter
 io
+json
 pathlib
