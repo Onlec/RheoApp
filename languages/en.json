@@ -3,688 +3,467 @@
     "page_title": "Theory & Models - RheoApp",
     "page_icon": "🧬",
     "main_title": "🧬 Theoretical Background & Models",
-    "main_intro": "This page contains the scientific foundation of RheoApp. Here you will find the underlying formulas, interactive visualizations and the interpretation of thermal and viscoelastic models.",
+    "main_intro": "This page contains the scientific foundation of the RheoApp. Here you will find the underlying formulas, \ninteractive visualizations and the interpretation of thermal and visco-elastic models.",
     "tab_tts_name": "🕒 Time-Temperature Superposition",
     "tab_thermal_name": "🔥 Thermal Models (Arrhenius/WLF/VFT)",
     "tab_structural_name": "🏗️ Structural Parameters",
     "tab_calc_name": "🧮 Quick Calculators",
-
     "tts": {
       "header": "Time-Temperature Superposition (TTS)",
-      "intro": "The fundamental principle behind TTS is that the rheological response of a polymer at different temperatures is **equivalent**, provided it is corrected with a shift factor $a_T$.",
-
-      "physical_basis_title": "🎯 Physical basis",
-      "physical_basis_text": "**When temperature changes:**\n* **High T**: Chains move faster → equivalent to **low frequency**\n* **Low T**: Chains move slower → equivalent to **high frequency**\n\n**The key insight:**\nWhat you measure at 200°C and 1 rad/s is the same as at 180°C and ~10 rad/s (if the material is thermorheologically simple!)",
-
+      "intro": "The fundamental principle behind TTS is that the rheological response of a polymer at different temperatures is **equivalent**, \nprovided it is corrected for a shift factor $a_T$.",
+      "physical_basis_title": "🎯 Physical Basis",
+      "physical_basis_text": "**With temperature changes:**\n* **High T**: Chains move faster → equivalent to **low frequency**\n* **Low T**: Chains move slower → equivalent to **high frequency**\n\n**The key insight:**\nWhat you measure at 200°C and 1 rad/s is the same as 180°C at ~10 rad/s \n(if the material is thermorheologically simple!)",
       "shifted_freq_label": "**Shifted Frequency:**",
       "shifted_freq_formula": "\\omega_{shifted} = \\omega \\cdot a_T",
-
       "whereby_label": "**Where:**",
       "shift_factor_explanation": "- $a_T$ = Shift factor (dimensionless)\n- $a_T > 1$: Shift to higher frequency (lower T)\n- $a_T < 1$: Shift to lower frequency (higher T)\n- At reference temperature: $a_T = 1$ (no shift)",
-
-      "validity_title": "⚠️ Validity condition",
-      "validity_warning": "The material must be **thermorheologically simple**:\n\n✅ **Required for TPU:**\n- Hard segments fully melted (T > Tm + 20K)\n- No phase separation during measurement\n- No chemical changes (crosslinking, degradation)\n- Homogeneous morphology at all measurement temperatures\n\n❌ **TTS NOT valid if:**\n- Hard-segment crystallization is present\n- Phase transitions occur during measurement\n- Bi-modal molecular weight distribution evolves with T",
-
-      "protip": "**Pro Tip:** The **Van Gurp-Palmen plot** (Tab 2 in the main app) is your best friend to verify whether TTS is valid! Curves should overlap.",
-
+      "validity_title": "⚠️ Validity Requirements",
+      "validity_warning": "The material must be **thermorheologically simple**:\n\n✅ **Required for TPU:**\n- Hard segments fully melted (T > Tm + 20K)\n- No phase separation during measurement\n- No chemical changes (crosslinking, degradation)\n- Homogeneous morphology at all measurement temperatures\n\n❌ **TTS NOT valid if:**\n- Hard-segment crystallisation present\n- Phase transitions during measurement\n- Bi-modal molecular weight distribution evolves with T",
+      "protip": "**Pro Tip:** The **Van Gurp-Palmen plot** (Tab 2 in main app) is your best friend \nto check whether TTS is valid! Curves must overlap.",
       "demo_show_shifted_label": "✨ Show TTS Effect (shift the data)",
       "demo_show_shifted_help": "Toggle between raw data and TTS-corrected data",
-      "demo_shifted_success": "✅ TTS Applied!\nData shifted with aT={at:.3f}",
+      "demo_shifted_success": "✅ TTS Applied!\nData has been shifted by aT={at:.3f}",
       "demo_unshifted_info": "ℹ️ Raw data (no TTS)\nData at different T do not overlap",
-
       "demo_annotation_shifted": "✨ TTS applied!\nCurves overlap",
-      "demo_annotation_unshifted": "❌ Without TTS!\nData at {test_temp}°C is left-shifted\n(slower relaxation)",
-
-      "demo_title_shifted": "✅ With TTS: Master Curve (data overlaps!)",
-      "demo_title_unshifted": "❌ Without TTS: Data at different T",
-
-      "demo_caption_shifted": "✅ **With TTS (shift factor applied):**\n- Data at {test_temp}°C shifted to the right (×{at:.2f})\n- Both temperatures now fall on the same curve\n- This proves the material is thermorheologically simple!",
-
-      "demo_caption_unshifted": "❌ **Without TTS (raw data):**\n- Data at {test_temp}°C lies LEFT of {ref_temp}°C\n- Lower T → slower molecular motion → curve shifts to low ω\n- Curves do NOT overlap → we need TTS!",
-
+      "demo_annotation_unshifted": "❌ Without TTS!\nData at {test_temp}°C lies to the left\n(slower relaxation)",
+      "demo_title_shifted": "✅ With TTS: Master Curve (data overlapping!)",
+      "demo_title_unshifted": "❌ Without TTS: Data at different temperatures",
+      "demo_caption_shifted": "✅ **With TTS (shift factor applied):**\n- Data at {test_temp}°C has been shifted to the right (×{at:.2f})\n- Both temperatures now fall on the same curve\n- This proves the material is thermorheologically simple!",
+      "demo_caption_unshifted": "❌ **Without TTS (raw data):**\n- Data at {test_temp}°C lies to the LEFT of {ref_temp}°C\n- Lower T → slower molecular motion → curve shifts to low ω\n- The curves do NOT overlap → we need TTS!",
       "decision_tree_title": "🌳 TTS Validation Decision Tree",
-      "decision_tree": "```\nStart here\n    │\n    ├─→ Van Gurp-Palmen curves overlap?\n    │   ├─ YES ✅ → TTS is very likely valid\n    │   └─ NO ❌ → Continue to step 2\n    │\n    ├─→ R² of shift factor fit > 0.95?\n    │   ├─ YES ✅ → TTS possibly valid (but be cautious)\n    │   └─ NO ❌ → TTS NOT valid, use per-temperature data\n    │\n    ├─→ Multiple crossovers in master curve?\n    │   ├─ NO (1 crossover) ✅ → TTS likely valid\n    │   └─ YES (>1 crossover) ❌ → Thermorheologically complex, be very careful\n    │\n    └─→ T_ref > Softening Point?\n        ├─ YES ✅ → You are above hard-segment melt\n        └─ NO ❌ → Increase T_ref! Crystallization disrupts TTS\n```",
+      "decision_tree": "```\nStart here\n    │\n    ├─→ Van Gurp-Palmen curves overlap?\n    │   ├─ YES ✅ → TTS is very likely valid\n    │   └─ NO ❌ → Continue to step 2\n    │\n    ├─→ R² of shift factor fit > 0.95?\n    │   ├─ YES ✅ → TTS possibly valid (but be cautious)\n    │   └─ NO ❌ → TTS NOT valid, use data at individual T\n    │\n    ├─→ Multiple crossovers in master curve?\n    │   ├─ NO (1 crossover) ✅ → TTS probably valid\n    │   └─ YES (>1 crossover) ❌ → Thermorheologically complex, be very cautious\n    │\n    └─→ T_ref > Softening Point?\n        ├─ YES ✅ → You are above hard-segment melt\n        └─ NO ❌ → Increase T_ref! Crystallisation disturbs TTS\n```",
       "model_comparison_title": "📈 Model Comparison",
       "model_comparison_intro": "Different temperature models predict different shift factor trends:",
       "model_arrhenius": "Arrhenius (Simple)",
-      "model_wlf": "WLF (Rubbery)",
+      "model_wlf": "WLF (Rubber)",
       "model_vft": "VFT (Hybrid)",
-
       "model_comparison_params_label": "**Compare the models:**",
       "model_comparison_tref_label": "T_ref (°C)",
       "model_comparison_ea_label": "Ea (kJ/mol) [Arrhenius]",
       "model_comparison_c1_label": "WLF C₁",
       "model_comparison_c2_label": "WLF C₂ (K)",
       "model_comparison_adjust_tip": "💡 Adjust parameters to see the effect!",
-
       "model_comparison_plot_title": "Model Comparison: Arrhenius vs WLF",
       "model_comparison_x_label": "Temperature (°C)",
       "model_comparison_y_label": "log(aT)",
       "model_comparison_ref_line": "T_ref = {tref}°C",
       "model_comparison_annotation": "At T_ref = {tref}°C: log(aT) = 0",
-
-      "model_comparison_interpretation": "**Interpretation:**\n- **Arrhenius** (red): Linear relation, simple model\n- **WLF** (blue): Curved behavior, better for polymers near Tg\n- Both models intersect at T_ref (log(aT) = 0)\n- Differences grow at low/high T"
+      "model_comparison_interpretation": "**Interpretation:**\n- **Arrhenius** (red): Linear relationship, simple model\n- **WLF** (blue): Curved trend, better for polymers near Tg\n- Both models cross at T_ref (log(aT) = 0)\n- Difference between models larger at low/high T"
     },
-
     "thermal": {
       "header": "Thermal Shift Factor Models",
-      "intro": "There are three main models to describe the temperature dependence of shift factors. Each model has its own application range and physical interpretation.",
-
+      "intro": "There are three main models to describe the temperature dependence of shift factors.\nEach model has its own application domain and physical interpretation.",
       "arrhenius_title": "🔥 Arrhenius Model",
       "arrhenius_subtitle": "For Simple Fluids and High Temperatures",
-
       "arrhenius_formula_label": "**Formula:**",
       "arrhenius_formula": "\\log(a_T) = \\frac{E_a}{R} \\left( \\frac{1}{T} - \\frac{1}{T_{ref}} \\right)",
-
       "arrhenius_linear_label": "**Linear form (for fitting):**",
       "arrhenius_linear": "\\log(a_T) = \\text{slope} \\cdot \\frac{1}{T} + \\text{intercept}",
       "arrhenius_ea_calc": "E_a = |\\text{slope}| \\cdot R \\cdot \\ln(10)",
-
       "arrhenius_params_label": "**Parameters:**",
-      "arrhenius_params": "- **Ea**: Activation energy (kJ/mol) — energy required for a flow event\n- **R**: Gas constant (8.314 J/mol·K)\n- **T**: Absolute temperature (K)\n- **T_ref**: Reference temperature (K)",
-
+      "arrhenius_params": "- **Ea**: Activation energy (kJ/mol) - energy required for a flow event to occur\n- **R**: Gas constant (8.314 J/mol·K)\n- **T**: Absolute temperature (K)\n- **T_ref**: Reference temperature (K)",
       "arrhenius_when_label": "**When to use:**",
       "arrhenius_when": "✅ **Suitable for:**\n- High temperatures (T >> Tg + 100K)\n- Simple fluids without glass transition in measurement range\n- TPU above ~220°C (fully molten, Arrhenius-like)\n\n❌ **NOT suitable for:**\n- Temperatures near Tg (WLF works better)\n- Strongly curved log(aT) vs 1/T plots",
-
       "arrhenius_typical_label": "**Typical values for TPU:**",
-      "arrhenius_typical": "- **Ea**: 80–120 kJ/mol\n- **R²**: > 0.95 (otherwise TTS is questionable)\n- **High Ea interpretation**: Strong temperature sensitivity (hard to process)\n- **Low Ea interpretation**: Weak temperature sensitivity (wide processing window)",
-
-
+      "arrhenius_typical": "- **Ea**: 80-120 kJ/mol\n- **R²**: > 0.95 (otherwise TTS is questionable)\n- **High Ea interpretation**: Strong temperature sensitivity (difficult to process)\n- **Low Ea interpretation**: Weak T-sensitivity (broad processing window)",
       "wlf_title": "🧊 Williams-Landel-Ferry (WLF) Model",
-      "wlf_subtitle": "For Amorphous Polymers Near Tg",
-
+      "wlf_subtitle": "For Amorphous Polymers near Tg",
       "wlf_formula_label": "**Formula:**",
       "wlf_formula": "\\log(a_T) = \\frac{-C_1 (T - T_{ref})}{C_2 + (T - T_{ref})}",
-
       "wlf_params_label": "**Parameters:**",
-      "wlf_params": "- **C₁**: Free volume parameter (dimensionless)\n- **C₂**: Temperature difference parameter (K or °C)\n- **T_ref**: Reference temperature (usually Tg + 50K)",
-
+      "wlf_params": "- **C₁**: Free volume parameter (dimensionless)\n- **C₂**: Temperature difference parameter (K or °C)\n- **Tref**: Reference temperature (usually chosen as Tg + 50K)",
       "wlf_universal_label": "**'Universal' constants (Ferry, 1980):**",
-      "wlf_universal": "If T_ref = Tg:\n- C₁ = 17.4\n- C₂ = 51.6 K\n\n⚠️ **Note:** These are averages! TPU values may deviate due to:\n- Hard-segment crystallization effects\n- Bi-phase morphology\n- Variation in soft-segment chemistry",
-
+      "wlf_universal": "If Tref = Tg:\n- C₁ = 17.4\n- C₂ = 51.6 K\n\n⚠️ **Note:** These are averages! For TPU, values may deviate due to:\n- Hard-segment crystallisation effects\n- Bi-phasic morphology\n- Variation in soft-segment chemistry",
       "wlf_typical_label": "**Typical ranges for polymers:**",
-      "wlf_typical": "| Parameter | Normal Range | What does deviation mean? |\n|-----------|--------------|----------------------------|\n| **C₁** | 8 – 17 | C₁ < 5: Atypical (possibly thermorheologically complex) |\n|  |  | C₁ > 30: Very atypical (check data!) |\n| **C₂** | 40 – 60 K | C₂ < 30K: Possibly wrong T_ref |\n|  |  | C₂ > 100K: Wide temperature range or phase transitions |",
-
-      "wlf_negative_warning": "⚠️ **CRITICAL WARNING: Negative C₁ Values**\n\nIf your WLF fit gives a **negative C₁**, this means:\n\n**Physical Impossibility:**\n- Negative C₁ violates free volume theory\n- This is NOT just a bad fit but a **fundamental problem**\n\n**Cause:**\nThe material is **thermorheologically COMPLEX** in this temperature range.\n\n**For TPU this usually means:**\n1. Hard-segment crystallization not fully melted\n2. Phase separation changes with T\n3. T_ref lies below the softening point\n\n**Solutions:**\n1. Choose T_ref = highest measured temperature\n2. Remove lowest temperatures from TTS analysis\n3. Use only Arrhenius model\n4. Accept that TTS is not fully valid and use parameters only for trends",
-
-      "wlf_tg_estimation": "**🌡️ Tg Estimation via WLF:**\n\nIf you have a WLF fit with C₂, you can estimate the glass transition temperature:\n\n$$T_g \\approx T_{ref} - C_2$$\n\n⚠️ This is a rough estimate — always validate with DSC.",
-
-
+      "wlf_typical": "| Parameter | Normal Range | What does deviation mean? |\n|-----------|--------------|---------------------------|\n| **C₁** | 8 - 17 | C₁ < 5: Atypical (possibly thermorheologically complex) |\n|  |  | C₁ > 30: Very atypical (check data!) |\n| **C₂** | 40 - 60 K | C₂ < 30K: Possibly wrong Tref chosen |\n|  |  | C₂ > 100K: Broad temperature range or phase transitions |",
+      "wlf_negative_warning": "⚠️ **CRITICAL WARNING: Negative C₁ Values**\n\nIf your WLF fit gives **negative C₁**, this means:\n\n**Physical Impossibility:**\n- Negative C₁ violates free volume theory\n- This is NOT a 'bad fit', but a **fundamental problem**\n\n**Cause:**\nThe material is **thermorheologically COMPLEX** in this temperature range.\n\n**For TPU this usually means:**\n1. **Hard-segment crystallisation** not yet fully melted\n2. **Phase separation** between soft/hard segments changes with T\n3. **T_ref is below the softening point** (see Tab 4 in main app)\n\n**Solutions:**\n1. **Choose T_ref = highest measured temperature** (above softening point)\n2. **Remove lowest temperatures** from TTS analysis\n3. **Use only Arrhenius model** (less sensitive to complexity)\n4. **Accept that TTS is not 100% valid** and use parameters for trends only\n\n→ See **Interpretation Guide** → **Practical Scenarios** → \"Negative WLF C₁\" for detailed troubleshooting.",
+      "wlf_tg_estimation": "**🌡️ Tg Estimation via WLF:**\n\nIf you have a WLF fit with C₂, you can estimate the glass transition temperature:\n\n$$T_g \\approx T_{ref} - C_2$$\n\n**Example:**\n- T_ref = 180°C\n- C₂ = 50K\n- → T_g ≈ 180 - 50 = **130°C**\n\n⚠️ **Note:** This is a rough estimate! Always validate with DSC for an accurate Tg.",
       "vft_title": "🌀 Vogel-Fulcher-Tammann (VFT) Model",
-      "vft_subtitle": "Hybrid Model for Broad Temperature Ranges",
-
+      "vft_subtitle": "Hybrid Model for Broad Temperature Range",
       "vft_formula_label": "**Formula:**",
       "vft_formula": "\\log(a_T) = A + \\frac{B}{T - T_0}",
-
       "vft_params_label": "**Parameters:**",
-      "vft_params": "- **A**: Constant offset (dimensionless)\n- **B**: Strength coefficient (K)\n- **T₀**: Vogel temperature — theoretical freeze temperature (K)",
-
+      "vft_params": "- **A**: Constant offset (dimensionless)\n- **B**: Strength coefficient (K)\n- **T₀**: Vogel temperature – theoretical 'freeze' temperature (K)",
       "vft_relation_label": "**Relation with Tg:**",
-      "vft_relation": "Rule of thumb for many polymers:\n\n$$T_g \\approx T_0 + 50K$$",
-
+      "vft_relation": "Rule of thumb for many polymers:\n$$T_g \\approx T_0 + 50K$$\n\nFor TPU soft-segment Tg:\n- If VFT gives T₀ = -90°C\n- Then estimated Tg ≈ -90 + 50 = **-40°C**\n\n✅ This often agrees well with DSC measurements for polyether/polyester soft segments!",
       "vft_when_label": "**When to use:**",
-      "vft_when": "✅ **Advantages:**\n- More flexible than WLF\n- Works across wider temperature range\n- Can describe both Arrhenius-like and WLF-like behavior\n\n⚠️ **Disadvantages:**\n- Sensitive to overfitting (3 parameters)\n- Fit may diverge if T₀ is close to measurement temperatures\n- Harder physical interpretation\n\n**Best practice:**\n- Use VFT if you have >5 temperatures\n- Compare R² with WLF\n- If similar → use WLF (simpler)",
-
-      "model_comparison_table": "| Aspect | Arrhenius | WLF | VFT |\n|---------|------------|-----|-----|\n| Parameters | 1 | 2 | 3 |\n| Temperature range | High T | Near Tg | Broad |\n| Physical basis | Activation energy | Free volume | Hybrid |\n| Linearity | Linear in 1/T | Nonlinear | Nonlinear |\n| Risk | Underfit | Sensitive | Overfit |",
-
+      "vft_when": "✅ **Advantages:**\n- More flexible than WLF (extra parameter)\n- Works over broader temperature range\n- Can describe both Arrhenius-like and WLF-like behaviour\n\n⚠️ **Disadvantages:**\n- Sensitive to overfitting (3 parameters!)\n- Fit can diverge if T₀ is too close to measurement temperatures\n- More difficult to interpret physically\n\n**Best practice:**\n- Use VFT if you have >5 temperatures\n- Check whether VFT really fits better than WLF (compare R²)\n- If R²_VFT ≈ R²_WLF → use WLF (simpler)",
+      "model_comparison_title": "⚖️ Model Comparison Summary",
+      "model_comparison_table": "| Aspect | Arrhenius | WLF | VFT |\n|--------|-----------|-----|-----|\n| **Parameters** | 1 (Ea) | 2 (C₁, C₂) | 3 (A, B, T₀) |\n| **Temperature range** | T >> Tg + 100K | Tg to Tg+100K | Broad |\n| **Physical basis** | Activation energy | Free volume | Hybrid |\n| **Linearity** | Linear in 1/T | Non-linear | Non-linear |\n| **TPU Application** | T > 220°C | 150-220°C | 150-250°C |\n| **Pro/con** | Simple but limited | Physical but sensitive | Flexible but prone to overfitting |\n| **When to use** | High T, simple melt | Near soft-segment Tg | Broad T-range |",
       "model_interpretation_title": "🧠 Parameter Interpretation",
-      "model_interpretation": "| Observation | Meaning | Action |\n|-------------|----------|---------|\n| Ea > 120 kJ/mol | Very temperature sensitive | Tight process control needed |\n| Ea < 60 kJ/mol | Weak T sensitivity | Robust window |\n| C₁ < 0 | Alarm — complex | Increase T_ref |\n| C₁ = 8–17 | Normal | OK |\n| R² < 0.90 | Poor fit | Check TTS validity |"
+      "model_interpretation": "**If you observe these patterns:**\n\n| Observation | Meaning | Action |\n|-------------|---------|--------|\n| **Ea > 120 kJ/mol** | Very temperature-sensitive | Narrow process window, strict T-control required |\n| **Ea < 60 kJ/mol** | Low T-sensitivity | Broad process window, robust |\n| **C₁ < 0** | **ALARM!** Thermorheologically complex | Increase T_ref, check vGP plot |\n| **C₁ = 8-17** | Normal polymer behaviour | ✅ TTS probably valid |\n| **C₂ > 100K** | Broad range or phase transitions | Check Han plot for stability |\n| **R² < 0.90** | Poor fit | TTS possibly not valid, check vGP |\n| **VFT T₀ > lowest T** | Fit diverges! | Use WLF or Arrhenius |"
     },
     "structural": {
       "header": "Structural Rheological Parameters",
-      "intro": "These parameters characterize the molecular architecture and processability of your TPU. They can be read directly from the master curve and have concrete processing implications.",
-
+      "intro": "These parameters characterise the molecular architecture and processability of your TPU.\nThey can be read directly from the master curve and have concrete process implications.",
       "eta0_title": "🌊 Zero-Shear Viscosity (η₀)",
       "eta0_subtitle": "The Ultimate Flow Indicator",
-
       "eta0_definition_label": "**Definition:**",
       "eta0_definition": "The viscosity at infinitely low shear rate (or frequency):\n\n$$\\eta_0 = \\lim_{\\omega \\to 0} |\\eta^*(\\omega)|$$\n\n**In practice:** We extrapolate the complex viscosity curve to ω → 0 using the **Cross model**.",
-
       "eta0_cross_label": "**Cross Model Extrapolation:**",
       "eta0_cross_formula": "\\eta^*(\\omega) = \\frac{\\eta_0}{1 + (\\tau \\cdot \\omega)^n}",
-      "eta0_cross_params": "- **η₀**: Zero-shear viscosity (target value)\n- **τ**: Characteristic relaxation time (s)\n- **n**: Shear-thinning exponent (typically 0.5–1.0)",
-
+      "eta0_cross_params": "- **η₀**: Zero-shear viscosity (what we are looking for!)\n- **τ**: Characteristic relaxation time (s)\n- **n**: Shear-thinning exponent (typical 0.5 – 1.0)",
       "eta0_mw_label": "**Relation with Molecular Weight:**",
-      "eta0_mw_relation": "For **linear polymers** (no branching):\n\n$$\\eta_0 \\propto M_w^{3.4}$$\n\n**This means:**\n- Doubling Mw → η₀ increases about **10×**\n- 10% Mw decrease → **~30% η₀ decrease**\n\n⚠️ **For TPU this is more complex** due to hard/soft segment structure, but the trend remains:\n\n**η₀ is extremely sensitive to Mw changes!**",
-
-      "eta0_typical_label": "**Typical TPU values:**",
-      "eta0_typical_table": "| TPU Type | η₀ Range (Pa·s) | Processing Behavior |\n|-----------|-----------------|---------------------|\n| Soft TPU | 10⁴ – 10⁵ | Easy processing, low pressure |\n| Medium TPU | 10⁵ – 5×10⁵ | Normal process window |\n| Stiff TPU | 5×10⁵ – 10⁶ | High pressure, tight T window |\n| Very stiff | > 10⁶ | Difficult, degradation risk |",
-
-      "eta0_process_label": "**Processing Implications:**",
-      "eta0_process": "| Process | Role of η₀ | Optimal η₀ Range |\n|-----------|------------|------------------|\n| Extrusion | Pressure build-up | 10⁵ – 5×10⁵ |\n| Injection molding | Fill time & pressure | 10⁴ – 10⁶ |\n| Coating | Sagging & leveling | 10³ – 10⁵ |\n| Fiber spinning | Melt strength | 10⁵ – 10⁶ |",
-
+      "eta0_mw_relation": "For **linear polymers** (no branching):\n\n$$\\eta_0 \\propto M_w^{3.4}$$\n\n**This means:**\n- Double Mw → η₀ increases **10×**!\n- 10% decrease in Mw → **~30% decrease in η₀**\n\n⚠️ **For TPU this is more complex** due to the hard/soft segment structure, but the trend holds:\n\n**η₀ is extremely sensitive to Mw changes!**",
+      "eta0_typical_label": "**Typical values for TPU:**",
+      "eta0_typical_table": "| TPU Type | η₀ Range (Pa·s) | Processing Behaviour |\n|----------|-----------------|----------------------|\n| **Soft TPU** | 10⁴ - 10⁵ | Easy to process, low pressure |\n| **Medium TPU** | 10⁵ - 5×10⁵ | Normal processing window |\n| **Rigid TPU** | 5×10⁵ - 10⁶ | High pressure, narrow T-window |\n| **Very rigid** | > 10⁶ | Difficult, risk of degradation |",
+      "eta0_process_label": "**Process Implications:**",
+      "eta0_process": "| Process | What does η₀ determine? | Optimal η₀ Range |\n|---------|-------------------------|------------------|\n| **Extrusion** | Pressure build-up, energy input | 10⁵ - 5×10⁵ Pa·s |\n| **Injection Moulding** | Fill time, injection pressure | 10⁴ - 10⁶ Pa·s (broad!) |\n| **Coating** | Drip behaviour, levelling | 10³ - 10⁵ Pa·s |\n| **Fibre Spinning** | Melt strength vs processability | 10⁵ - 10⁶ Pa·s |",
       "eta0_qc_label": "**🎯 Use as Quality Control:**",
-      "eta0_qc": "**Hydrolysis Detection:**\n\nTPU is very moisture-sensitive → chain scission → Mw drops → η₀ drops strongly\n\n**Golden rule:** >20% deviation in η₀ between batches → investigate BEFORE processing!",
-
-
+      "eta0_qc": "**Hydrolysis Detection:**\n\nTPU is extremely sensitive to moisture → chain scission → Mw drops → η₀ drops drastically\n\n**Practical check:**\n```\nη₀_batch1 = 3.5×10⁵ Pa·s  (standard)\nη₀_batch2 = 2.2×10⁵ Pa·s  (new delivery)\n\nRatio = 2.2/3.5 = 0.63  →  **37% decrease!**\n\n→ ALARM: Possible hydrolysis\n→ Check: Drying time (vacuum, 80°C, 4-6h)\n→ Test: Moisture content < 0.02% (200 ppm)\n```\n\n**Golden rule:** >20% deviation in η₀ between batches → Investigate BEFORE processing!",
       "gn0_title": "🏗️ Plateau Modulus (G_N⁰)",
       "gn0_subtitle": "Measure of Entanglement Density",
-
       "gn0_definition_label": "**Definition:**",
-      "gn0_definition": "The **plateau modulus** is the value of G' in the elastic plateau region:\n\n$$G_N^0 = \\text{median}(G') \\quad \\text{where} \\quad G' > 2G''$$\n\n**Physical meaning:** Measures the density of chain entanglements.",
-
-      "gn0_molecular_label": "**Relation to Molecular Architecture:**",
-      "gn0_molecular": "$$G_N^0 \\approx \\frac{\\rho R T}{M_e}$$\n\n**Interpretation:**\n- High G_N⁰ → More entanglements → Higher melt strength\n- Low G_N⁰ → Fewer entanglements → Softer melt",
-
-      "gn0_typical_label": "**Typical TPU Values:**",
-      "gn0_typical": "| Hardness | G_N⁰ (Pa) | Me | Melt Strength |\n|-----------|------------|-----|--------------|\n| Shore 70A | 1–3×10⁵ | ~3000 | Low |\n| Shore 90A | 3–6×10⁵ | ~2000 | Medium |\n| Shore 60D | 6–10×10⁵ | ~1500 | High |\n| Shore 75D | >10⁶ | <1500 | Very high |",
-
-
+      "gn0_definition": "The **plateau modulus** is the value of G' in the elastic plateau regime:\n\n$$G_N^0 = \\text{median}(G') \\quad \\text{where} \\quad G' > 2G''$$\n\n**Physical meaning:**\nG_N⁰ measures the **density of chain entanglements** (physical cross-links between polymer chains).",
+      "gn0_molecular_label": "**Relation with Molecular Architecture:**",
+      "gn0_molecular": "$$G_N^0 \\approx \\frac{\\rho R T}{M_e}$$\n\nWhere:\n- **ρ**: Density (kg/m³)\n- **R**: Gas constant (8.314 J/mol·K)\n- **T**: Absolute temperature (K)\n- **M_e**: Entanglement molecular weight (g/mol)\n\n**Interpretation:**\n- **High G_N⁰** → More entanglements → Stiffer, higher melt strength\n- **Low G_N⁰** → Fewer entanglements → Softer, lower melt strength",
+      "gn0_typical_label": "**Typical values for TPU:**",
+      "gn0_typical": "| TPU Hardness | G_N⁰ (Pa) | Me (g/mol) | Process Character |\n|--------------|-----------|------------|-------------------|\n| **Shore 70A** | 1-3×10⁵ | ~3000 | Soft, low melt strength |\n| **Shore 90A** | 3-6×10⁵ | ~2000 | Medium melt strength |\n| **Shore 60D** | 6-10×10⁵ | ~1500 | High melt strength |\n| **Shore 75D** | >10⁶ | <1500 | Very high melt strength |",
+      "gn0_process_label": "**Process Implications:**",
+      "gn0_process": "**High G_N⁰ (>5×10⁵ Pa):**\n✅ Advantages:\n- Excellent shape stability during cooling\n- Good melt strength for extrusion\n- Less stringing in injection moulding\n\n❌ Disadvantages:\n- Higher processing temperature required\n- Longer cycle times\n- More energy input\n\n**Low G_N⁰ (<3×10⁵ Pa):**\n✅ Advantages:\n- Easy to process\n- Fast mould filling\n- Broad processing window\n\n❌ Disadvantages:\n- Shape instability (sagging)\n- Weak melt strength (poor for coating)\n- More sink mark issues",
       "terminal_slope_title": "📐 Terminal Slope",
-      "terminal_slope_subtitle": "Complete Melt Validation",
-
+      "terminal_slope_subtitle": "Validation of Complete Melt",
       "terminal_slope_definition_label": "**Definition:**",
-      "terminal_slope_definition": "In the terminal zone (lowest frequencies, δ > 75°) a Newtonian melt should satisfy:\n\n$$G' \\propto \\omega^2$$\n$$G'' \\propto \\omega^1$$",
-
+      "terminal_slope_definition": "In the **terminal zone** (lowest frequencies, δ > 75°) a **Newtonian fluid** must satisfy:\n\n$$G' \\propto \\omega^2 \\quad \\text{(slope = 2 in log-log plot)}$$\n$$G'' \\propto \\omega^1 \\quad \\text{(slope = 1 in log-log plot)}$$\n\n**In RheoApp:** We calculate the slope of $\\log(G')$ vs $\\log(\\omega)$ in the terminal zone.",
       "terminal_slope_ideal_label": "**Ideal value:**",
-      "terminal_slope_ideal": "**Slope = 2.0** → Fully molten, Newtonian behavior",
-
-      "terminal_slope_interpretation_label": "**Deviation Interpretation:**",
-      "terminal_slope_interpretation": "| Slope | Diagnosis | Action |\n|--------|-----------|---------|\n| 1.9–2.1 | Excellent | None |\n| 1.7–1.9 | Slight structure | Monitor |\n| 1.5–1.7 | Incomplete melt | Increase T +20°C |\n| <1.5 | Severe | Stop & check sample |\n| >2.3 | Unusual | Check data |",
-
-      "terminal_slope_tpu_label": "**TPU Specific Notes:**",
-      "terminal_slope_tpu": "Critical because hard segments may crystallize during measurement if temperature is too low. Always measure above hard-segment Tm + safety margin.",
-
-
+      "terminal_slope_ideal": "**Slope = 2.0** → Perfect Newtonian behaviour\n\n**This means:**\n- Material is fully melted\n- No residual crystallisation\n- No crosslinking\n- No long-chain branching",
+      "terminal_slope_interpretation_label": "**Interpretation of Deviations:**",
+      "terminal_slope_interpretation": "| Slope Value | Diagnosis | Possible Causes | Action |\n|-------------|-----------|-----------------|--------|\n| **1.9 - 2.1** | ✅ Excellent | Ideal melt | No action needed |\n| **1.7 - 1.9** | ⚠️ Slight deviation | Minor structural hindrance | Monitor, possibly OK |\n| **1.5 - 1.7** | ❌ Problem | Incomplete melt or onset of crosslinking | **Increase T_max +20°C** |\n| **< 1.5** | 🚨 **SERIOUS** | Strong crosslinking or crystallisation | **Stop! Check sample** |\n| **> 2.3** | 🤔 Unusual | Possible degradation or measurement artefact | Check data quality |",
+      "terminal_slope_tpu_label": "**TPU-Specific Considerations:**",
+      "terminal_slope_tpu": "**Why is this CRITICAL for TPU?**\n\nTPU hard segments can **crystallise during measurement** if:\n- T < Tm_hard + 20K\n- Cooling too fast\n- Sample not fully melted beforehand\n\n**Symptoms of incomplete melt:**\n- Terminal slope < 1.8\n- Master curve 'stepping'\n- Van Gurp-Palmen curves spread\n- Negative WLF C₁\n\n**Solution:**\n1. **Measure at higher temperatures** (>200°C for standard TPU)\n2. **Check time-sweep stability** (@T_max, 10 min, G' drift <±5%)\n3. **Use N₂ purge** (prevents oxidation at high T)\n4. **Verify sample preparation** (no regrind, no moisture)",
       "crossover_title": "⚖️ Crossover Frequency (ω_co)",
-      "crossover_subtitle": "Where Elastic = Viscous",
-
+      "crossover_subtitle": "Where Elasticity = Viscosity",
       "crossover_definition_label": "**Definition:**",
-      "crossover_definition": "The crossover point is where:\n\n$$G'(\\omega_{co}) = G''(\\omega_{co})$$",
-
-      "crossover_relaxation_label": "**Relation to Relaxation Time:**",
-      "crossover_relaxation": "$$\\tau = \\frac{1}{\\omega_{co}}$$",
-
-      "crossover_number_label": "**Number of Crossovers — Critical Indicator:**",
-      "crossover_number": "| Crossovers | Interpretation |\n|-------------|----------------|\n| 1 | Ideal |\n| 2 | Possibly bimodal |\n| ≥3 | Complex morphology |",
-
-      "crossover_tpu_label": "**Multiple Crossovers in TPU:**",
-      "crossover_tpu": "Often caused by bimodal Mw distribution, hard-segment domains, or incompatible segment blends.",
-
-      "crossover_process_label": "**Processing Implications:**",
-      "crossover_process": "**High ω_co:** Fast relaxation, easy filling, low stability\n**Low ω_co:** Slow relaxation, high melt strength, higher pressure"
+      "crossover_definition": "The crossover point is where:\n\n$$G'(\\omega_{co}) = G''(\\omega_{co})$$\n\nAt this point the phase angle δ = 45° (tan δ = 1).",
+      "crossover_relaxation_label": "**Relation with Relaxation Time:**",
+      "crossover_relaxation": "The characteristic relaxation time τ is:\n\n$$\\tau = \\frac{1}{\\omega_{co}}$$\n\n**Example:**\n- ω_co = 10 rad/s\n- → τ = 1/10 = **0.1 seconds**\n\n**Meaning:**\nThis is the time scale at which the material transitions from elastic (solid-like) to viscous (liquid-like) behaviour.",
+      "crossover_number_label": "**Number of Crossovers – Critical Indicator:**",
+      "crossover_number": "| Number of Crossovers | Interpretation | Action |\n|----------------------|----------------|--------|\n| **0** | G' > G'' everywhere OR G'' > G' everywhere | Check measurement range |\n| **1** | ✅ **Ideal** – Thermorheologically simple | Continue with analysis |\n| **2** | ⚠️ Possibly bi-modal relaxation | Check Cole-Cole plot |\n| **≥3** | ❌ **COMPLEX** – Phase heterogeneity | Check vGP, TTS possibly invalid |",
+      "crossover_tpu_label": "**Multiple Crossovers in TPU – What does it mean?**",
+      "crossover_tpu": "**Causes for >1 crossover:**\n\n1. **Bi-modal Molecular Weight Distribution**\n   - Blend of different Mw fractions\n   - Regrind mixed with virgin material\n\n2. **Hard-Segment Domains**\n   - Partially melted hard segments\n   - Two-phase morphology persists at measurement temperatures\n\n3. **Incompatible Soft Segments**\n   - Mix of polyether and polyester segments\n   - Macro-phase separation\n\n**Diagnostic steps:**\n```\nStep 1: Check Van Gurp-Palmen\n  └─ Spreading? → Thermorheologically complex → use per-T data\n\nStep 2: Check Cole-Cole plot\n  └─ Asymmetric arc? → Bi-modal MWD → Check sample source\n\nStep 3: Check Han plot\n  └─ Curves diverge? → Morphology changes → Increase T or check chemistry\n```",
+      "crossover_process_label": "**Process Implications of ω_co:**",
+      "crossover_process": "**High ω_co (>10 rad/s):**\n- Short relaxation time (τ < 0.1 s)\n- Material 'forgets' its shape quickly\n- Good for: Fast filling, low residence time\n- Poor for: Shape stability, drape\n\n**Low ω_co (<1 rad/s):**\n- Long relaxation time (τ > 1 s)\n- Material 'remembers' its shape for a long time\n- Good for: Melt strength, shape stability\n- Poor for: Slow filling, high pressure build-up\n\n**Typical TPU:** ω_co = 0.1 – 10 rad/s (τ = 0.1 – 10 s)"
     },
-    "calc": {
-      "header": "Quick Calculators",
-      "intro": "Fast engineering calculators to translate rheological parameters into practical processing metrics.",
-
-      "shear_rate_title": "🔄 Shear Rate Estimator",
-      "shear_rate_intro": "Estimate shear rate from screw speed or flow conditions.",
-
-      "shear_rate_extrusion_label": "**Extrusion (rough estimate):**",
-      "shear_rate_extrusion_formula": "\\dot{\\gamma} \\approx \\frac{\\pi \\cdot D \\cdot N}{h}",
-      "shear_rate_extrusion_params": "- **D**: Screw diameter (m)\n- **N**: Rotation speed (rev/s)\n- **h**: Channel depth (m)",
-
-      "shear_rate_capillary_label": "**Capillary / die flow:**",
-      "shear_rate_capillary_formula": "\\dot{\\gamma} = \\frac{4Q}{\\pi R^3}",
-      "shear_rate_capillary_params": "- **Q**: Volumetric flow (m³/s)\n- **R**: Die radius (m)",
-
-      "shear_rate_typical_label": "**Typical Ranges:**",
-      "shear_rate_typical": "| Process | Shear Rate (1/s) |\n|----------|------------------|\n| Rotational rheometer | 0.01 – 100 |\n| Extrusion | 10 – 1000 |\n| Injection molding | 1000 – 10000 |",
-
-
-      "mw_title": "🧬 Molecular Weight Change Estimator",
-      "mw_intro": "Estimate molecular weight change from zero-shear viscosity ratio.",
-
-      "mw_formula_label": "**Relation:**",
-      "mw_formula": "\\frac{M_{w,2}}{M_{w,1}} = \\left( \\frac{\\eta_{0,2}}{\\eta_{0,1}} \\right)^{1/3.4}",
-
-      "mw_example_label": "**Example:**",
-      "mw_example": "If η₀ drops from 400k to 200k Pa·s:\n\nMw ratio ≈ (0.5)^(1/3.4) ≈ 0.82 → **18% Mw loss**",
-
-      "mw_warning": "⚠️ Valid mainly for linear polymers without strong branching. For TPU treat as trend indicator, not absolute value.",
-
-
-      "ttspredict_title": "🌡️ Shift Factor Predictor",
-      "ttspredict_intro": "Estimate aT at a new temperature using fitted model parameters.",
-
-      "ttspredict_arrhenius_label": "Arrhenius prediction:",
-      "ttspredict_wlf_label": "WLF prediction:",
-      "ttspredict_note": "Use only within the validated temperature window. Extrapolation increases error quickly.",
-
-
-      "viscosity_title": "🧪 Viscosity at Process Shear Rate",
-      "viscosity_intro": "Estimate viscosity at a target shear rate using a power-law approximation.",
-
-      "viscosity_powerlaw_formula": "\\eta(\\dot{\\gamma}) = K \\cdot \\dot{\\gamma}^{n-1}",
-      "viscosity_powerlaw_params": "- **K**: Consistency index\n- **n**: Flow index (n < 1 = shear thinning)",
-
-      "viscosity_interpretation": "| n | Behavior |\n|----|-----------|\n| 1.0 | Newtonian |\n| 0.7–0.9 | Mild shear thinning |\n| 0.4–0.7 | Strong shear thinning |\n| <0.4 | Very strong shear thinning |",
-
-
-      "rule_of_thumb_title": "📌 Rules of Thumb",
-      "rule_of_thumb_list": [
-        "Measure at least 5 temperatures for reliable TTS modeling",
-        "Choose T_ref near your main processing temperature",
-        "Terminal slope < 1.7 → temperature too low",
-        "Negative WLF C1 → TTS not valid in this range",
-        "η₀ change > 20% between batches → investigate material history",
-        "Multiple crossovers → check morphology or Mw distribution",
-        "R² < 0.95 for shift fit → use results with caution"
-      ],
-
-
-      "quick_diagnostics_title": "🚦 Quick Diagnostics Table",
-      "quick_diagnostics": "| Observation | Likely Cause | Recommended Action |\n|--------------|--------------|--------------------|\n| Curves don’t overlap after TTS | Not thermo-simple | Limit T range |\n| η₀ very low | Degradation / hydrolysis | Check drying |\n| Terminal slope too low | Not fully molten | Increase T |\n| WLF fit unstable | Wrong T_ref | Move T_ref higher |\n| Large batch spread | Mw variation | Add QC screening |"
+    "calculators": {
+      "header": "🧮 Quick Calculators",
+      "intro": "Handy tools for quick calculations during analysis.",
+      "mw_calc_title": "📊 Calculator 1: Molecular Weight Change from η₀",
+      "mw_calc_subtitle": "Estimate Mw difference between batches",
+      "mw_calc_eta0_ref_label": "η₀ Reference Batch (Pa·s)",
+      "mw_calc_eta0_new_label": "η₀ New Batch (Pa·s)",
+      "mw_calc_exponent_label": "Mw Exponent (typical 3.4)",
+      "mw_calc_exponent_help": "For linear polymers this is 3.4. For branched polymers it can be higher.",
+      "mw_calc_result_title": "**📌 Result:**",
+      "mw_calc_ratio": "η₀ Ratio: {ratio:.3f}",
+      "mw_calc_change": "→ Estimated Mw change: **{change:+.1f}%**",
+      "mw_calc_interpretation": "**💡 Interpretation:**\n\n| Δη₀ | Estimated ΔMw | Possible Cause | Action Required? |\n|-----|---------------|----------------|------------------|\n| ±5% | ±1.5% | Normal batch variation | ✅ OK |\n| ±10% | ±3% | Minor process deviation | ⚠️ Monitor |\n| ±20% | ±6% | Significant change | ❌ Investigate! |\n| -30% | -9% | **HYDROLYSIS ALARM** | 🚨 Stop processing |\n| +50% | +15% | Longer chains or crosslinking | 🔍 Analysis required |\n\n**For large deviations (>15%):**\n1. Check drying time of granulate (80°C, vacuum, 4-6h)\n2. Measure moisture content (<0.02% = 200 ppm)\n3. Verify supplier batch number\n4. Check storage conditions (dry, cool, dark)",
+      "tg_calc_title": "🌡️ Calculator 2: Tg Estimation",
+      "tg_calc_subtitle": "Via WLF or VFT parameters",
+      "tg_calc_method_label": "Calculation method",
+      "tg_calc_method_wlf": "WLF (T_ref - C₂)",
+      "tg_calc_method_vft": "VFT (T₀ + 50K)",
+      "tg_calc_tref_label": "T_ref (°C) [for WLF]",
+      "tg_calc_c2_label": "WLF C₂ (K)",
+      "tg_calc_t0_label": "VFT T₀ (°C)",
+      "tg_calc_result_wlf": "**Estimated Tg (WLF):** {tg:.1f}°C",
+      "tg_calc_result_vft": "**Estimated Tg (VFT):** {tg:.1f}°C",
+      "tg_calc_validation": "**⚠️ Validation Essential:**\n\nThis estimate is a **rule of thumb**, NOT an accurate measurement!\n\n**Verification required via DSC:**\n- Mid-point Tg for soft segment\n- Onset/endset for range\n- Second run after erasing thermal history\n\n**Typical Tg for TPU soft segments:**\n- **Polyether (PTMO):** -60°C to -30°C\n- **Polyester (PCL):** -50°C to -20°C\n- **Polyester (adipate):** -40°C to -10°C\n\nIf your estimated Tg is **not in this range**:\n→ WLF/VFT fit may not be reliable\n→ Material may be thermorheologically complex",
+      "process_calc_title": "🏭 Calculator 3: Process Temperature Optimisation",
+      "process_calc_subtitle": "Determine ideal T-window for TPU processing",
+      "process_calc_tg_label": "Tg Soft Segment (°C)",
+      "process_calc_tm_label": "Tm Hard Segment (°C)",
+      "process_calc_tm_help": "Typical: 170-220°C depending on hard-segment type",
+      "process_calc_recommendations": "**📋 Recommended Processing Temperatures:**\n\n**Minimum Processing Temperature:**\n$$T_{{min}} = T_m + 20K = {tm} + 20 = {t_min:.0f}°C$$\n\n**Maximum Safe Temperature** (degradation/crosslinking limit):\n$$T_{{max}} = \\min(230°C, T_{{degradation}} - 10K) = {t_max:.0f}°C$$\n\n**Optimal Range for Different Processes:**\n\n| Process | Recommended T Range | Rationale |\n|---------|--------------------|-----------|\n| **Extrusion** | {t_min:.0f} - {t_extr:.0f}°C | Sufficient melt without degradation |\n| **Injection Moulding** | {t_inj_min:.0f} - {t_inj_max:.0f}°C | Fast filling, good flow |\n| **Coating** | {t_coat_min:.0f} - {t_coat_max:.0f}°C | Low viscosity, no bubbles |\n| **Compression** | {t_comp_min:.0f} - {t_comp_max:.0f}°C | Slow flow, time for consolidation |\n\n⚠️ **CRITICAL WARNINGS:**\n\n**At T > 220°C:**\n- NCO groups can post-react → crosslinking\n- Oxidative degradation increases rapidly\n- **ALWAYS use N₂ purge** during measurements\n- Limit residence time to <10 minutes\n\n**At T < Tm + 20K:**\n- Hard-segment crystallisation can occur\n- Master curve is NOT valid (TTS violated)\n- Increased pressure build-up due to incomplete melt\n- Risk of filling problems and surface defects",
+      "quick_ref_title": "📚 Quick Reference Table",
+      "quick_ref_subtitle": "Typical Values for TPU at Standard Conditions",
+      "quick_ref_table": "| Parameter | Symbol | Typical Range | Unit | Check Method |\n|-----------|--------|---------------|------|---------------|\n| **Zero-Shear Viscosity** | η₀ | 10⁴ - 10⁶ | Pa·s | Cross model fit |\n| **Plateau Modulus** | G_N⁰ | 10⁵ - 10⁶ | Pa | Median in G'>2G'' zone |\n| **Terminal Slope** | m | 1.8 - 2.2 | - | Fit δ>75° zone |\n| **Crossover Frequency** | ω_co | 0.1 - 10 | rad/s | G' = G'' point |\n| **Activation Energy** | Ea | 80 - 120 | kJ/mol | Arrhenius fit |\n| **WLF C₁** | C₁ | 8 - 17 | - | WLF fit (>0!) |\n| **WLF C₂** | C₂ | 40 - 60 | K | WLF fit |\n| **Soft Segment Tg** | Tg_soft | -60 - -20 | °C | DSC |\n| **Hard Segment Tm** | Tm_hard | 170 - 220 | °C | DSC |\n| **Process T Min** | T_proc_min | Tm + 20 | °C | Calculated |\n| **Process T Max** | T_proc_max | <230 | °C | Degradation limit |\n\n**🎯 Use this table for:**\n- Initial validation of your results ('do my values fall in the normal range?')\n- Troubleshooting (large deviations indicate problems)\n- Batch-to-batch comparison\n- Process optimisation starting points"
     }
   },
   "interpretation_guide": {
     "page_title": "Interpretation Guide - RheoApp",
-    "page_icon": "🧭",
-    "main_title": "🧭 Rheology Interpretation Guide",
-    "main_intro": "Use this guide to translate rheological results into material behavior and processing risk. Each indicator helps you decide whether your TPU is suitable for processing and how reliable your measurements are.",
-
-    "quality_flags_title": "🚦 Quality Flags",
-    "quality_flags_intro": "Automatic indicators based on fitted parameters and curve behavior.",
-
-    "flag_green_title": "🟢 Reliable",
-    "flag_green_desc": "Data and fits are physically consistent.\n- TTS valid\n- Model fit strong\n- Parameters in expected range\n- Suitable for quantitative decisions",
-
-    "flag_yellow_title": "🟡 Caution",
-    "flag_yellow_desc": "Mostly usable but with warnings.\n- Moderate fit quality\n- Small physical inconsistencies\n- Limited temperature window\n- Use for trends, not absolutes",
-
-    "flag_red_title": "🔴 Critical",
-    "flag_red_desc": "Results likely not physically valid.\n- TTS breakdown\n- Non-physical parameters\n- Poor fit quality\n- Do not use for process decisions",
-
-
-    "tts_validation_title": "🕒 TTS Validation Checklist",
-    "tts_validation_list": [
-      "Van Gurp–Palmen curves overlap",
-      "Shift factor fit R² ≥ 0.95",
-      "No negative WLF C1",
-      "Terminal slope near 2",
-      "Only one crossover region",
-      "No visible phase transitions in test window"
-    ],
-
-    "tts_validation_rule": "If 2 or more checks fail → treat TTS as NOT valid.",
-
-
-    "parameter_ranges_title": "📊 Parameter Range Interpretation",
-
-    "eta0_ranges": {
-      "title": "Zero-Shear Viscosity (η₀)",
-      "low": "Very low → Possible degradation or low molecular weight",
-      "normal": "Normal → Expected Mw and drying OK",
-      "high": "Very high → High Mw or partial crosslinking risk"
+    "page_icon": "🧪",
+    "main_title": "🧪 Interpretation & Validation Guide",
+    "main_intro": "How do you read the graphs in the dashboard? Use this guide to determine whether your measurement is reliable \nand what the curves tell you about the structure of your TPU. **This page is your rheology cheat sheet!**",
+    "tab_vgp_name": "📊 Van Gurp-Palmen",
+    "tab_han_name": "🔬 Han Plot",
+    "tab_cole_name": "🌀 Cole-Cole Plot",
+    "tab_cross_name": "⚖️ Crossover Analysis",
+    "tab_scenarios_name": "💼 Practical Scenarios",
+    "vgp": {
+      "header": "📊 Van Gurp-Palmen (vGP) Plot",
+      "intro": "The vGP plot is the **gold standard** for validating Time-Temperature Superposition. \nIt plots the phase angle (δ) against the complex modulus (|G*|).",
+      "why_powerful": "**Why is this plot so powerful?**\n\nBecause δ(|G*|) is an **intrinsic property** of the molecular structure.\nIf the structure does not change with temperature, all curves must overlap.\nIf they do not overlap → structure changes → TTS is invalid!",
+      "visual_guide_title": "🔍 What do you see? Interpretation Guide",
+      "perfect_title": "### ✅ PERFECT: Superposition",
+      "perfect_description": "**What you see:**\n- All curves (different T) fall on one line\n- No spreading, no 'steps'\n- Smooth, continuous curve\n\n**Meaning:**\n- Material is thermorheologically SIMPLE\n- Homogeneous melt at all T\n- Hard segments fully melted\n\n**Consequence:**\n- ✅ Master Curve is physically correct\n- ✅ WLF/Arrhenius parameters reliable\n- ✅ η₀ extrapolation valid\n- ✅ Predictions outside measurement range OK",
+      "perfect_image_caption": "Ideal: All temperatures on one line",
+      "moderate_title": "### ⚠️ MODERATE: Small Spreading",
+      "moderate_description": "**What you see:**\n- Curves lie close together\n- Small spreading (< 5° at same |G*|)\n- No extreme deviations\n\n**Meaning:**\n- Slightly thermorheologically complex\n- Minor morphological differences\n- Acceptable for practical use\n\n**Consequence:**\n- ⚠️ TTS usable with caution\n- ⚠️ Parameters are approximations\n- ❌ Do NOT extrapolate far beyond range\n- ✅ OK for process optimisation",
+      "moderate_image_caption": "Acceptable: Small spreading between curves",
+      "problematic_title": "### ❌ PROBLEMATIC: Strong Spreading",
+      "problematic_description": "**What you see:**\n- Curves lie far apart (> 10°)\n- Clear 'steps' between temperatures\n- Systematic shift with T\n\n**Meaning:**\n- Material is thermorheologically COMPLEX\n- Morphology changes significantly with T\n- Hard-segment crystallisation active\n\n**Consequence:**\n- ❌ TTS is NOT valid\n- ❌ Master Curve is a mathematical trick, not physical\n- ❌ WLF may give negative C₁\n- ⚠️ Use data at individual temperatures\n\n**Action:**\n1. Increase T_ref to highest T\n2. Remove lowest T from analysis\n3. Measure at higher T (> Tm + 30K)",
+      "problematic_image_caption": "Problem: Strong spreading = TTS invalid",
+      "decision_tree_title": "🌳 Diagnostic Decision Tree",
+      "decision_tree": "```\nSTART: Inspect your Van Gurp-Palmen plot\n    │\n    ├─→ Question 1: Do all curves lie on one line?\n    │   ├─ YES ✅ → TTS is valid, proceed with analysis\n    │   └─ NO → Go to Question 2\n    │\n    ├─→ Question 2: Spreading < 5° over the entire range?\n    │   ├─ YES ⚠️ → TTS usable, be cautious with extrapolation\n    │   └─ NO → Go to Question 3\n    │\n    ├─→ Question 3: Are the lowest temperatures the problem?\n    │   ├─ YES → Remove lowest T, choose T_ref = highest T\n    │   └─ NO → Go to Question 4\n    │\n    ├─→ Question 4: Do you see systematic 'steps' between T?\n    │   ├─ YES ❌ → Hard-segment crystallisation! Measure at higher T\n    │   └─ NO → Go to Question 5\n    │\n    └─→ Question 5: Does the curve shape itself change with T?\n        ├─ YES 🚨 → SERIOUS: Degradation or chemical change\n        └─ NO → Possibly measurement error, repeat measurement\n\nOUTCOME:\n✅ = Proceed with TTS analysis\n⚠️ = Use TTS with caution\n❌ = TTS not valid, use per-T data\n🚨 = Stop! Check sample stability\n```",
+      "tpu_features_title": "🔬 TPU-Specific Features",
+      "tpu_intro": "TPU has unique characteristics in the vGP plot due to its bi-phasic structure:",
+      "tpu_step_pattern_title": "**1. 'Step' Pattern (Stepped vGP)**",
+      "tpu_step_pattern": "**What you see:**\nDiscrete 'steps' or 'plateaus' in the curve at different temperatures.\n\n**Cause:**\nHard-segment domains do not all melt at the same temperature.\n\n**Physics:**\n```\nLowest T: Hard segment crystalline → High δ at low |G*|\n         ↓ (temperature rises)\nMedium T: Partially melted → Intermediate step in curve\n         ↓\nHighest T: Fully melted → Smooth curve, lower δ\n```\n\n**Diagnosis:**\n- Normal 'steps' (< 3 steps): OK for commercial TPU\n- Many steps (> 5): Broad hard-segment distribution\n- Very sharp steps: Possibly bi-modal hard-segment length\n\n**Solution:**\nMeasure at T > highest Tm + 20K to eliminate steps.",
+      "tpu_hook_pattern_title": "**2. 'Hook' at High δ**",
+      "tpu_hook_pattern": "**What you see:**\nThe curve bends upward (δ increases) at very low |G*| (lowest frequencies).\n\n**Cause:**\nRubber-elastic behaviour of soft segments dominates at low ω.\n\n**Is this OK?**\n✅ YES, if:\n- Only at lowest T\n- Hook disappears at higher T\n- Rest of curve is smooth\n\n❌ NO, if:\n- Hook at all T\n- Hook grows with T\n- Accompanied by low terminal slope\n\n**Meaning:**\n- Entanglement network in soft segments\n- Typical for polyether soft segments\n- NOT a problem for TTS validity",
+      "tpu_negative_wlf_title": "**3. Negative WLF C₁ & vGP Spreading**",
+      "tpu_negative_wlf": "**The Link:**\nIf you see negative WLF C₁ in Tab 4 of the main app, ALWAYS check the vGP plot.\n\n**Expectation:**\nWith negative C₁ you WILL SEE vGP spreading (curves lying apart).\n\n**Why?**\nNegative C₁ means shift factors do not evolve according to WLF behaviour.\nThis occurs when morphology changes with T → vGP curves cannot overlap.\n\n**Causal Chain:**\n```\nT too low → Hard-segment crystallisation → Morphology changes with T\n     ↓              ↓                              ↓\nTTS violated → vGP spreads → WLF fit gives negative C₁\n```\n\n**Solution:**\nChoose T_ref = highest measured T (above the 'elbow point' in the vGP spreading).",
+      "quick_check_title": "⚡ Quick Check: Is My vGP OK?",
+      "quick_check_intro": "Answer these questions for a quick validation:",
+      "quick_q1": "**Question 1:** Do all curves lie within a band of 5°?",
+      "quick_q1_yes": "✅ YES → TTS is probably valid",
+      "quick_q1_no": "❌ NO → Go to question 2",
+      "quick_q2": "**Question 2:** Is the spreading systematic (lowest T deviates most)?",
+      "quick_q2_yes": "⚠️ YES → Crystallisation effect, increase T_min",
+      "quick_q2_no": "🚨 NO → Possible degradation or chemical change",
+      "quick_q3": "**Question 3:** Do you see a 'hook' at low |G*|?",
+      "quick_q3_yes": "ℹ️ YES → Normal for TPU soft segments, not a problem",
+      "quick_q3_no": "✅ NO → No elastic network effect",
+      "quick_q4": "**Question 4:** Does the curve shape change with T (not just vertical shift)?",
+      "quick_q4_yes": "❌ YES → COMPLEX, TTS questionable",
+      "quick_q4_no": "✅ NO → Only vertical spreading, possibly OK",
+      "quick_result_title": "**📊 RESULT:**",
+      "quick_result_all_yes": "**All ✅ answers?**  \n→ Your vGP is excellent! TTS is valid, proceed with confidence.\n\n**Mix of ✅ and ⚠️?**  \n→ TTS usable but with caution. Use parameters for trends, not absolute predictions.\n\n**One or more ❌ or 🚨?**  \n→ TTS is questionable. Use data per individual temperature, or re-measure at higher T.",
+      "quick_action_title": "**🔧 DIRECT ACTIONS:**",
+      "quick_actions": "| Observation | Immediate Action | Long-term Solution |\n|-------------|------------------|--------------------|\n| **Spreading > 10°** | Increase T_ref to highest T | Measure at T > Tm + 30K |\n| **Steps at low T** | Remove lowest 2 temperatures | Determine Tm via DSC, measure above it |\n| **Negative WLF C₁** | Check vGP! Should show spreading | Use only Arrhenius model |\n| **Curve shape changes** | Stop TTS, use per-T data | Check sample (no degradation?) |\n| **Hook grows with T** | Check Han plot for crosslinking | Lower T_max or use N₂ purge |"
     },
-
-    "ea_ranges": {
-      "title": "Activation Energy (Ea)",
-      "low": "< 60 kJ/mol → Weak temperature sensitivity",
-      "normal": "60–120 kJ/mol → Typical polymer melt behavior",
-      "high": "> 120 kJ/mol → Strong temperature sensitivity, narrow process window"
+    "han": {
+      "header": "🔬 Han Plot (G' vs G'')",
+      "intro": "The Han plot detects chemical changes and batch-to-batch differences by plotting storage modulus (G') versus loss modulus (G'').",
+      "why_useful": "**Why is this useful?**\n\n- **Vertical shifts** indicate molecular weight changes (degradation/crosslinking)\n- **Temperature independence**: If TTS is valid, all T should overlap\n- **More sensitive** than vGP to subtle molecular changes\n- **Direct comparison** between batches without fitting",
+      "shifts_title": "🔍 What do vertical shifts mean?",
+      "upward_shift_title": "**⬆️ Upward Shift**",
+      "upward_shift": "**What happens physically:**\n\nAt higher temperatures you see HIGHER G' values than expected based on G''.\n\n```\nExample:\nAt G'' = 10⁴ Pa:\n  170°C: G' = 5×10⁴ Pa  (normal)\n  190°C: G' = 7×10⁴ Pa  (higher than expected!)\n  210°C: G' = 10×10⁴ Pa (even higher!)\n```\n\n**Diagnosis: CROSSLINKING!**\n\n**Mechanism for TPU:**\n```\nNCO groups (unreacted isocyanates)\n    + High T (> 200°C)\n    + Time (residence in rheometer)\n    ↓\nCrosslinks between chains\n    ↓\nIncreased elasticity (G' rises)\n    ↓\nUpward shift in Han plot\n```\n\n**Critical symptoms:**\n- Shift starts at T > 200-220°C\n- Stronger with longer measurement duration\n- Combined with rising G' in time-sweep\n\n**SOLUTION:**\n1. ✅ **Lower T_max to < 200°C**\n2. ✅ **Use N₂ purge** (reduces oxidation catalysis)\n3. ✅ **Shorter time-sweeps** (< 5 min per T)\n4. ✅ **Check NCO index** of material (must be < 0.5%)\n5. ⚠️ If crosslinking already occurred: **Sample has changed, repeat measurement**",
+      "downward_shift_title": "**⬇️ Downward Shift**",
+      "downward_shift": "**What happens physically:**\n\nAt higher temperatures you see LOWER G' values than expected.\n\n```\nExample:\nAt G'' = 10⁴ Pa:\n  170°C: G' = 5×10⁴ Pa  (normal)\n  190°C: G' = 3×10⁴ Pa  (lower than expected)\n  210°C: G' = 2×10⁴ Pa  (even lower)\n```\n\n**Diagnosis: DEGRADATION or HYDROLYSIS**\n\n**Mechanism 1 - Thermal Degradation:**\n```\nHigh T + Long time + Oxygen\n    ↓\nChain scission\n    ↓\nMolecular weight decreases\n    ↓\nG' drops more than G''\n    ↓\nDownward shift\n```\n\n**Mechanism 2 - Hydrolysis:**\n```\nMoisture in sample (> 200 ppm)\n    + High T\n    ↓\nH₂O + Urethane/Urea bond → Scission\n    ↓\nMw drops drastically\n    ↓\nStrong downward shift\n```\n\n**How to distinguish:**\n\n| Feature | Thermal Degradation | Hydrolysis |\n|---------|---------------------|------------|\n| **T-dependence** | Strong (> 220°C critical) | Moderate (from 180°C) |\n| **Time-dependence** | Gradual (hours) | Fast (minutes) |\n| **Colour change** | Yes (browning) | No |\n| **Moisture content** | Not relevant | > 200 ppm critical |\n| **N₂ purge effect** | Helps a lot | Little help |\n\n**SOLUTION:**\n\n**For Degradation:**\n1. Lower T_max\n2. Use N₂ purge\n3. Shorten measurement duration\n\n**For Hydrolysis:**\n1. 🔥 **DRY the sample!** (80°C vacuum, 4-6h)\n2. Measure moisture content (< 200 ppm = 0.02%)\n3. Store in desiccator\n4. Measure within 30 min after drying",
+      "ideal_title": "✅ Ideal: Perfect Overlap",
+      "ideal_description": "**What you want to see:**\n\nAll temperature curves coincide in the Han plot.\n\n**Meaning:**\n- No chemical changes during measurement ✅\n- Molecular structure stable at all T ✅\n- TTS assumption valid ✅\n\n**Tolerances:**\n- **Excellent:** Curves within 10% of each other\n- **Good:** Curves within 20%\n- **Moderate:** Up to 30% spreading (may still be usable)\n- **Poor:** > 30% spreading (TTS questionable)",
+      "ideal_tpu_note": "**TPU Specific:**\n\nSmall (< 15%) upward shift at highest T is **normal** for commercial TPU.\nResidual NCO is often 0.1-0.5%, enough for slight crosslinking at > 210°C.\n\n**This is OK as long as:**\n- Shift is small (< 20%)\n- Only occurs at highest T\n- G' does not continue rising in time-sweep\n\n**Not OK if:**\n- Shift > 30%\n- Also at lower T (< 200°C)\n- Progressive increase with time",
+      "practical_check_title": "⚡ Practical Check Procedure",
+      "practical_check": "**Step-by-step Han Plot Analysis:**\n\n```\nSTEP 1: Visual Inspection\n  └─ Overlay all T in one plot\n     ├─ Overlap? → ✅ Go to step 4\n     └─ Spreading? → Go to step 2\n\nSTEP 2: Determine Direction of Shift\n  ├─ Upward (higher T → higher G')\n  │  └─ → CROSSLINKING ALARM\n  │     └─ Check: NCO index, T_max > 200°C?, time-sweep drift?\n  │\n  └─ Downward (higher T → lower G')\n     └─ → DEGRADATION/HYDROLYSIS ALARM\n        └─ Check: Moisture content, colour change, N₂ purge?\n\nSTEP 3: Quantify the Shift\n  └─ At G'' = 10⁴ Pa, what is ΔG' between lowest and highest T?\n     ├─ < 20%: ⚠️ Slight, possibly acceptable\n     ├─ 20-50%: ❌ Significant, investigation required\n     └─ > 50%: 🚨 SERIOUS, sample is changing drastically\n\nSTEP 4: Cross-validation\n  └─ Check other plots:\n     ├─ vGP: Should also show spreading if Han shift present\n     ├─ Cole-Cole: Shape must remain consistent\n     └─ Time-sweep @ T_max: G' must be stable (< ±5% drift)\n\nSTEP 5: Decision\n  ├─ All checks OK? → ✅ TTS valid\n  ├─ Minor deviations? → ⚠️ Use with caution\n  └─ Large shifts? → ❌ TTS invalid, repeat measurement\n```",
+      "han_vs_vgp_title": "🔄 Han vs Van Gurp-Palmen",
+      "han_vs_vgp": "**Both plots must be consistent!**\n\n| Scenario | vGP Plot | Han Plot | Diagnosis |\n|----------|----------|----------|------------|\n| **Ideal** | Overlap ✅ | Overlap ✅ | TTS perfectly valid |\n| **Slight deviation** | Small spreading ⚠️ | Small spreading ⚠️ | TTS usable |\n| **Crosslinking** | Spreading at high T ❌ | Upward shift ⬆️ | Sample is post-reacting! |\n| **Degradation** | Spreading ❌ | Downward shift ⬇️ | Sample is degrading |\n| **Crystallisation** | Steps at low T ❌ | Overlap ✅ | Incomplete melt, increase T |\n| **Inconsistent** | Overlap ✅ | Spreading ❌ | 🤔 Repeat measurement! |\n\n**Last row is suspicious:**\nIf vGP shows overlap but Han does not (or vice versa) → Possible measurement error or artefact."
     },
-
-    "wlf_ranges": {
-      "title": "WLF Parameters",
-      "c1_low": "C1 < 5 → Suspicious, possible thermo-complex behavior",
-      "c1_normal": "C1 between 8–17 → Typical",
-      "c1_negative": "C1 negative → Physically invalid → TTS breakdown",
-      "c2_extreme": "C2 very high/low → Wrong T_ref or phase effects"
+    "cole": {
+      "header": "🌀 Cole-Cole Plot (η'' vs η')",
+      "intro": "The Cole-Cole plot characterises molecular weight distribution (MWD) by plotting imaginary viscosity (η'') versus real viscosity (η').",
+      "why_useful": "**What does the shape tell you?**\n\nThe **arc shape** in the Cole-Cole plot is directly related to the **breadth of the MWD**:\n\n- **Perfect semicircle** → Very narrow MWD (mono-disperse)\n- **Flattened arc** → Broad MWD (poly-disperse)\n- **Asymmetric shape** → Bi-modal MWD\n\n**For TPU processing:**\nBroad MWD (flattened arc) is often **DESIRABLE** because it:\n- Gives a more stable processing window\n- Delivers better melt strength\n- Is less sensitive to T fluctuations",
+      "shape_guide_title": "🔍 Shape Interpretation Guide",
+      "shape_circle_title": "**🔵 Perfect Semicircle**",
+      "shape_circle": "**Shape:**\n```\n    η''\n     │    ╱─────╲\n     │  ╱         ╲\n     │ │           │\n     └─┴───────────┴─→ η'\n       Symmetric arc\n```\n\n**Meaning:**\n- Very narrow molecular weight distribution\n- Almost all chains have the same length\n- Classic for fractionated polymers\n\n**For TPU:**\n⚠️ **Unusual** and actually **not desirable**!\n\nCommercial TPU always has some MWD spread due to:\n- Polycondensation reaction statistics\n- Unavoidable side reactions\n- Blend effects (hard/soft segments)\n\n**If you see this with TPU:**\n1. Check sample source (is this really bulk material?)\n2. Possibly very controlled lab synthesis\n3. Or: Poor fit, insufficient data points",
+      "shape_flattened_title": "**⬭ Flattened Arc**",
+      "shape_flattened": "**Shape:**\n```\n    η''\n     │   ╱────────╲\n     │  ╱          ╲\n     │ ╱            ╲\n     └─┴──────────────┴─→ η'\n       Broad, flattened\n```\n\n**Meaning:**\n- ✅ **Normal broad MWD**\n- Significant difference between shortest and longest chains\n- Typical for commercial polymers\n\n**For TPU:**\n✅ **This is NORMAL and DESIRABLE!**\n\n**Typical Polydispersity Index (PDI):**\n- Mono-disperse (circle): PDI = 1.0 - 1.2\n- **Normal TPU (flattened):** PDI = 2.0 - 4.0\n- Very broad (very flat): PDI > 5.0\n\n**Processing advantages of broad MWD:**\n1. **Better melt strength** (long chains provide entanglement)\n2. **Smoother flow** (short chains lower viscosity)\n3. **More stable processing window** (less T-sensitive)\n4. **Better surface quality** (mix of relaxation times)",
+      "shape_asymmetric_title": "**〰️ Asymmetric Shape**",
+      "shape_asymmetric": "**Shape:**\n```\n    η''\n     │     ╱──╲\n     │    ╱    ╲╲\n     │   ╱       ╲╲\n     │  ╱          ╲╲╲\n     └──┴─────────────┴─→ η'\n        Skewed, 'tail' to the right\n```\n\n**Meaning:**\n- **Bi-modal or multi-modal MWD**\n- Two (or more) populations of chain length\n- Often the result of blending\n\n**Possible Causes for TPU:**\n\n1. **Regrind Mix**\n   - Virgin material + ground scrap\n   - Different degradation history\n   - → Two Mw peaks\n\n2. **Blend of Grades**\n   - Intentional blend (Shore 80A + 90A)\n   - Or: Unintentional (contamination batch)\n\n3. **Incomplete Polymerisation**\n   - Imbalanced reaction\n   - Fraction of unreacted oligomers\n   - Usually < 5% of total\n\n**Is this a problem?**\n\n⚠️ **Depends on context:**\n\n**OK if:**\n- Intentional blend (controlled process)\n- Asymmetry small (< 20% of main peak)\n- Processability is good\n\n**NOT OK if:**\n- Unexpected bi-modality (quality issue?)\n- Strong asymmetry (>30%)\n- Combined with batch-to-batch variation\n\n**Check:**\n1. Verify sample source (no mixing?)\n2. Compare with previous batches (consistent?)\n3. Check GPC/SEC if available (direct MWD measurement)",
+      "temp_changes_title": "🌡️ What if Shape Changes with T?",
+      "temp_changes": "**Ideal: Shape remains constant**\n\nIn a stable material the Cole-Cole shape must remain **the same** at all temperatures.\nOnly the **size** (scale) of the arc may change.\n\n**Why?**\n\nMWD is a **molecular property**. It does not change with temperature \n(as long as no chemical reactions occur).\n\n**What if the shape DOES change?**\n\n| Change | Possible Cause | Action |\n|--------|----------------|--------|\n| **Arc narrows with T ⬆️** | Degradation (long chains break selectively) | Check Han plot, lower T_max |\n| **Arc broadens with T ⬆️** | Crosslinking (short chains couple) | Check Han plot, N₂ purge |\n| **Asymmetry appears at T ⬆️** | Phase separation or crystallisation | Increase T further (> Tm + 30K) |\n| **Arc becomes irregular** | Measurement error or instability | Repeat, check time-sweep |\n\n**Practical Rule:**\n\nIf Cole-Cole shape is **not consistent** across T:\n1. Check Han plot for chemical changes\n2. Check time-sweep for drift/instability\n3. Possibly: Material is not suitable for this T-range\n4. Consider: Measuring at lower T or shorter time",
+      "temp_size_changes": "**Normal Scale Change:**\n\nIt is **normal** for the arc to become smaller at higher T:\n\n```\nLowest T: Large arc (high viscosity)\n    ↓ (T rises)\nMedium T: Medium arc\n    ↓\nHighest T: Small arc (low viscosity)\n```\n\n**This is NOT a problem!**  \nThis is simply the effect of temperature on viscosity (η decreases with T).\n\n**Check:**\n- Shape (circle vs flattened) remains the same? ✅ OK\n- Only size (radius) changes? ✅ OK\n- Shape becomes different? ❌ Problem!",
+      "quantitative_title": "🔢 Quantitative Analysis",
+      "quantitative_intro": "For experts: Quantify the MWD breadth from Cole-Cole data.",
+      "circle_diameter": "**Method 1: Circle Diameter Ratio**\n\nMeasure the **horizontal width** (Δη') and **vertical height** (Δη'') of the arc.\n\n$$\\text{Ellipticity} = \\frac{\\Delta\\eta'}{\\Delta\\eta''}$$\n\n**Interpretation:**\n- Ratio ≈ 1.0: Perfect circle (narrow MWD)\n- Ratio = 1.5 - 2.0: **Normal TPU** (broad MWD)\n- Ratio > 2.5: Very broad MWD\n\n**Estimating PDI:**\n\nFor simple systems (no branching):\n\n$$PDI \\approx 1 + 0.5 \\times (\\text{Ellipticity} - 1)$$\n\nExample:\n- Ellipticity = 2.0\n- → PDI ≈ 1 + 0.5×(2.0-1.0) = **1.5**\n\n⚠️ **Note:** This is a rough estimate! Validate with GPC for accurate PDI.",
+      "shoulder_analysis": "**Method 2: Shoulder Detection (Bi-modality)**\n\nIf you see a 'shoulder' or inflection point in the arc:\n\n```\n    η''\n     │     ╱──╲\n     │    ╱    ╲  ← Inflection here\n     │   ╱      ╲╲\n     │  ╱         ╲╲\n     └──┴──────────┴─→ η'\n```\n\n**Estimating the second population:**\n\n1. Draw a smooth fit through the main arc\n2. Calculate deviation from actual data\n3. Deviation > 10% of height → Significant second population\n\n**Interpretation:**\n- Small shoulder (< 10%): Minimal bi-modality, OK\n- Medium (10-30%): Clear second peak, check source\n- Large (> 30%): Dominant bi-modality, possibly a problem",
+      "mwd_process_link": "**MWD ↔ Process Behaviour Relationship:**\n\n| MWD Character | Cole-Cole | Process Advantage | Process Disadvantage |\n|---------------|-----------|-------------------|-----------------------|\n| **Narrow (PDI 1-1.5)** | Circle | Sharp melt point, predictable | Narrow processing window |\n| **Medium (PDI 2-3)** | Slightly flattened | Balance processable/stable | - |\n| **Broad (PDI 3-5)** | Strongly flattened | Broad window, high melt strength | Possible sink mark issues |\n| **Bi-modal** | Asymmetric | Can combine advantages | Unpredictable, rework risk |\n\n**For TPU Injection Moulding:**\n→ PDI 2.5 - 3.5 is optimal (nice flattened arc in Cole-Cole)\n\n**For TPU Extrusion:**\n→ PDI 3.0 - 4.5 preferred (slightly broader for melt strength)"
     },
-
-
-    "curve_shape_title": "📈 Curve Shape Diagnostics",
-
-    "curve_terminal": {
-      "title": "Terminal Zone",
-      "good": "G' slope ≈ 2 and G'' slope ≈ 1 → Fully molten",
-      "bad": "Slope too low → Incomplete melting or structure present"
+    "crossover": {
+      "header": "⚖️ Crossover Analysis (G' = G'')",
+      "intro": "The crossover point marks the transition from liquid-like (G'' > G') to solid-like (G' > G'') behaviour.\nIt is a critical indicator of material structure and processability.",
+      "number_title": "🔢 How Many Crossovers Do You Have?",
+      "one_crossover_title": "### 1️⃣ One Crossover",
+      "one_crossover": "**Pattern:**\n```\nLow ω: G'' > G' (viscous)\nCrossover at ω_co\nHigh ω: G' > G'' (elastic)\n```\n\n**Meaning:**\n- ✅ **Classic polymer behaviour**\n- ✅ Thermorheologically simple\n- ✅ Complete relaxation at low ω\n- ✅ TTS perfectly valid\n\n**Characteristic Time:**",
+      "one_crossover_tau_formula": "\\tau = \\frac{1}{\\omega_{co}}",
+      "one_crossover_tau_meaning": "This is the time chains need\nto fully disentangle.\n\n**For TPU:**\n- ω_co ≈ 0.1-10 rad/s (normal)\n- τ ≈ 0.1-10 seconds",
+      "zero_crossover_title": "### 0️⃣ No Crossover",
+      "zero_crossover": "**Pattern A: G' > G'' everywhere**\n```\nMaterial is ALWAYS elastic\nEven at low frequency\n```\n\n**Meaning:**\n- Gel-like behaviour\n- Crosslinked network\n- Incomplete melt\n- Crystalline network active\n\n**For TPU:**\n- ⚠️ Hard segments still crystalline\n- ⚠️ Measure at higher T\n- ⚠️ Check DSC: Tm reached?\n\n---\n\n**Pattern B: G'' > G' everywhere**\n```\nMaterial is ALWAYS viscous\nEven at high frequency\n```\n\n**Meaning:**\n- Very low Mw (oil-like)\n- Degradation\n- No entanglements\n\n**For TPU:**\n- ❌ Severe hydrolysis\n- ❌ Mw < critical Mw\n- ❌ Check material history",
+      "multiple_crossover_title": "### 2️⃣+ Multiple Crossovers",
+      "multiple_crossover": "**Pattern:**\n```\nG' and G'' cross MULTIPLE times\nNon-monotone curves\n```\n\n**Meaning:**\n- ❌ **Thermorheologically COMPLEX**\n- ❌ Multi-phase system\n- ❌ Relaxation processes overlap\n\n**Possible Causes for TPU:**\n\n1. **Bi-modal Mw Distribution**\n   - Short and long chains\n   - Two relaxation times\n\n2. **Hard-Segment Crystallisation**\n   - Crystals melting during measurement\n   - Morphology changes with T\n\n3. **Phase Separation**\n   - Soft/hard segment incompatibility\n   - Two Tg's active\n\n4. **Measurement Errors (Check!)**\n   - Strain too high (LVE violated)\n   - Sample not equilibrated\n   - Geometry error (gap setting)\n\n**ACTION:**\n1. Check Van Gurp-Palmen (spreading?)\n2. Increase T_ref above Tm\n3. Remove complex temperatures\n4. Repeat measurement (validation)",
+      "frequency_title": "📊 Crossover Frequency Interpretation",
+      "frequency_intro": "The position of ω_co tells you about processability:",
+      "frequency_table": {
+        "columns": [
+          "ω_crossover",
+          "Relaxation time τ",
+          "Interpretation",
+          "Process Implication"
+        ],
+        "rows": [
+          [
+            "< 0.01 rad/s",
+            "> 100 s",
+            "Extremely elastic, very high Mw",
+            "Difficult to process, high pressure"
+          ],
+          [
+            "0.01 - 0.1 rad/s",
+            "10 - 100 s",
+            "Highly elastic, high Mw",
+            "Good melt strength, slow flow"
+          ],
+          [
+            "0.1 - 1 rad/s",
+            "1 - 10 s",
+            "Balanced elastic/viscous",
+            "✅ Ideal for most TPU processes"
+          ],
+          [
+            "1 - 10 rad/s",
+            "0.1 - 1 s",
+            "More viscous, medium Mw",
+            "Fast processing, less shape stability"
+          ],
+          [
+            "> 10 rad/s",
+            "< 0.1 s",
+            "Highly viscous, low Mw",
+            "Very easy flow, poor melt strength"
+          ]
+        ]
+      },
+      "quick_check_title": "⚡ Quick Crossover Check",
+      "quick_check_expander": "🔧 Analyse Your Data",
+      "quick_check_input": "How many crossovers do you see?",
+      "zero_cross_question": "What do you see?",
+      "zero_cross_elastic": "G' > G'' everywhere",
+      "zero_cross_viscous": "G'' > G' everywhere",
+      "zero_elastic_diagnosis": "❌ Incomplete Melt or Crosslinked\n\n**Actions:**\n1. Increase temperature +20°C\n2. Check time-sweep stability\n3. Verify sample has no crosslinks\n4. Try lower frequency measurements",
+      "zero_viscous_diagnosis": "❌ Severe Degradation\n\n**Actions:**\n1. Check moisture content (<200 ppm)\n2. Compare η₀ with reference batch\n3. Verify thermal history\n4. Check for contamination",
+      "one_cross_input": "Crossover frequency ω_co (rad/s)",
+      "one_cross_success": "✅ Normal – Single Crossover\n\nRelaxation time: τ = {tau:.2f} s",
+      "one_cross_fast": "⚡ Fast Relaxation\n\n- Material flows quickly\n- Good for: Fast filling\n- Watch: Shape stability",
+      "one_cross_slow": "🐌 Slow Relaxation\n\n- Material retains shape\n- Good for: Melt strength\n- Watch: Processing time",
+      "one_cross_typical": "✅ Typical TPU Range\n\n- Balanced flow/elasticity\n- Good processability",
+      "multiple_cross_diagnosis": "❌ {n_cross} Crossovers = COMPLEX!\n\n**This indicates:**\n- Multiple relaxation processes\n- Likely bi-modal MWD or phase separation\n- TTS probably not valid\n\n**Action:**\n1. Check Van Gurp-Palmen plot\n2. Check Cole-Cole plot\n3. Verify sample composition\n4. Analyse per temperature (do not use master curve)"
     },
-
-    "curve_plateau": {
-      "title": "Plateau Region",
-      "present": "Clear plateau → Strong entanglement network",
-      "absent": "No plateau → Low Mw or weak entanglement"
-    },
-
-    "curve_crossover": {
-      "title": "Crossover Behavior",
-      "single": "Single crossover → Simple relaxation spectrum",
-      "multiple": "Multiple crossovers → Complex morphology or Mw distribution"
-    },
-
-
-    "process_risk_title": "🏭 Processing Risk Indicators",
-
-    "risk_pressure": {
-      "title": "High Pressure Risk",
-      "rule": "η₀ high + low crossover frequency → High pressure required"
-    },
-
-    "risk_sagging": {
-      "title": "Sagging Risk",
-      "rule": "Low G_N⁰ + fast relaxation → Shape instability"
-    },
-
-    "risk_instability": {
-      "title": "Flow Instability Risk",
-      "rule": "Very strong shear thinning (n < 0.4) → Melt fracture risk"
-    },
-
-    "risk_degradation": {
-      "title": "Degradation Risk",
-      "rule": "η₀ drop + Ea drop → Possible hydrolysis or chain scission"
-    },
-
-
-    "temperature_selection_title": "🌡️ Reference Temperature Selection",
-
-    "temperature_selection_rules": [
-      "Choose near main processing temperature",
-      "Prefer highest measured temperature if WLF unstable",
-      "Stay above hard-segment melting range",
-      "Avoid temperatures with visible transitions",
-      "Keep inside measured window when possible"
-    ],
-
-
-    "fit_quality_title": "📐 Fit Quality Guide",
-
-    "fit_r2": {
-      "excellent": "R² ≥ 0.98 → Excellent",
-      "good": "0.95–0.98 → Good",
-      "weak": "0.90–0.95 → Weak",
-      "poor": "< 0.90 → Unreliable"
-    },
-
-    "fit_residuals": "Random residuals → Good model choice\nSystematic curvature → Wrong model",
-
-
-    "final_decision_title": "✅ Final Decision Logic",
-    "final_decision_tree": "```\nParameters physical?\n   ├─ no → Reject model\n   └─ yes\n        │\n        TTS valid?\n        ├─ no → Use per-temperature data only\n        └─ yes\n             │\n             Fit quality good?\n             ├─ no → Use trends only\n             └─ yes → Safe for process prediction\n```"
-  },
-  "ui": {
-    "common": {
-      "ok": "OK",
-      "cancel": "Cancel",
-      "apply": "Apply",
-      "close": "Close",
-      "save": "Save",
-      "reset": "Reset",
-      "update": "Update",
-      "calculate": "Calculate",
-      "export": "Export",
-      "import": "Import",
-      "download": "Download",
-      "upload": "Upload",
-      "delete": "Delete",
-      "edit": "Edit",
-      "confirm": "Confirm",
-      "continue": "Continue",
-      "back": "Back",
-      "next": "Next",
-      "finish": "Finish"
-    },
-
-    "status": {
-      "ready": "Ready",
-      "loading": "Loading…",
-      "processing": "Processing…",
-      "calculating": "Calculating…",
-      "fitting": "Fitting model…",
-      "success": "Success",
-      "warning": "Warning",
-      "error": "Error",
-      "done": "Done"
-    },
-
-    "data": {
-      "no_data": "No data available",
-      "data_loaded": "Data loaded",
-      "data_invalid": "Invalid data format",
-      "data_incomplete": "Dataset is incomplete",
-      "data_out_of_range": "Values out of range",
-      "units_required": "Units are required"
-    },
-
-    "validation": {
-      "required_field": "This field is required",
-      "invalid_number": "Invalid number",
-      "invalid_temperature": "Invalid temperature",
-      "invalid_frequency": "Invalid frequency",
-      "must_be_positive": "Value must be positive",
-      "must_be_nonzero": "Value must be non-zero"
-    },
-
-    "fit": {
-      "start": "Start fit",
-      "refit": "Re-fit",
-      "fit_success": "Fit completed successfully",
-      "fit_failed": "Fit failed",
-      "fit_unstable": "Fit unstable — check input data",
-      "fit_insufficient": "Not enough data points for fit",
-      "fit_model_select": "Select model",
-      "fit_quality": "Fit quality"
-    },
-
-    "charts": {
-      "title": "Chart",
-      "x_axis": "X-axis",
-      "y_axis": "Y-axis",
-      "log_scale": "Log scale",
-      "linear_scale": "Linear scale",
-      "show_legend": "Show legend",
-      "hide_legend": "Hide legend",
-      "export_image": "Export image"
-    },
-
-    "help": {
-      "more_info": "More information",
-      "documentation": "Documentation",
-      "examples": "Examples",
-      "tips": "Tips",
-      "best_practices": "Best practices"
-    },
-
-    "notifications": {
-      "settings_saved": "Settings saved",
-      "export_ready": "Export ready",
-      "model_updated": "Model updated",
-      "parameters_updated": "Parameters updated",
-      "session_restored": "Session restored"
-    },
-
-    "errors": {
-      "generic": "Something went wrong",
-      "calculation_error": "Calculation error",
-      "fit_error": "Model fit error",
-      "import_error": "Import failed",
-      "export_error": "Export failed",
-      "network_error": "Network error",
-      "timeout": "Operation timed out"
+    "scenarios": {
+      "header": "💼 Practical Scenarios",
+      "intro": "Do you recognise these situations? Here is how to diagnose and solve them.",
+      "selector_label": "Choose your scenario:",
+      "selector_options": [
+        "🔴 My WLF C₁ is negative!",
+        "🟠 Master Curve 'steps'",
+        "🟡 Low terminal slope (<1.8)",
+        "🟢 High scatter in shift factors",
+        "🔵 Multiple crossovers appear",
+        "🟣 η₀ varies between batches",
+        "⚫ Time-sweep shows drift"
+      ],
+      "scenario1_title": "### 🚨 Negative WLF C₁",
+      "scenario1_symptom": "**Symptom:**\n```\nWLF fit gives C₁ < 0\nPhysically impossible!\n```",
+      "scenario1_root_cause": "**Root Cause:**\n\nThe material is **thermorheologically COMPLEX** in this temperature range.\n\n**Three main causes:**\n\n1. **T_ref too low**\n   - Below hard-segment melt point\n   - Crystallisation effects dominate\n   - → Solution: Increase T_ref to highest measured T\n\n2. **Incomplete melting**\n   - Hard segments not fully melted\n   - Residual crystallinity\n   - → Solution: Increase all measurement temperatures +20°C\n\n3. **Phase separation**\n   - Soft/hard segment mixing changes with T\n   - Morphology evolves during measurement\n   - → Solution: Accept complexity, use per-T data",
+      "scenario1_decision_tree": "**🌳 Decision Tree:**\n\n```\nSTART: C₁ < 0 in WLF fit\n    │\n    ├─→ Step 1: Check Van Gurp-Palmen\n    │   ├─ Spreading visible?\n    │   │  └─ YES → This explains negative C₁\n    │   └─ NO → Go to step 2\n    │\n    ├─→ Step 2: Check Softening Point (Tab 4)\n    │   ├─ T_ref < T_softening?\n    │   │  └─ YES → T_ref chosen too low!\n    │   └─ NO → Go to step 3\n    │\n    ├─→ Step 3: Check number of temperatures\n    │   ├─ < 4 temperatures?\n    │   │  └─ YES → Too little data, fit unreliable\n    │   └─ NO → Go to step 4\n    │\n    └─→ Step 4: Arrhenius R²\n        ├─ R² > 0.95?\n        │  └─ YES → Use Arrhenius, skip WLF\n        └─ NO → TTS fundamentally problematic\n```",
+      "scenario1_solutions": "**🔧 Solutions (in order of preference):**\n\n**1. Choose T_ref = Highest Measured Temperature**\n```python\n# In sidebar: Choose highest T as reference\n# This ensures you build from the homogeneous melt\n```\n✅ **Fastest solution**, often sufficient\n\n**2. Remove Lowest Temperatures**\n```\nIf you have 5 T (150, 170, 190, 210, 230°C):\n→ Remove 150 and 170°C\n→ Use only 190-230°C range\n```\n⚠️ Reduces frequency range\n\n**3. Measure at Higher Temperatures**\n```\nDetermine Tm_hard via DSC\nMeasure from Tm + 20K\n```\n✅ **Best long-term solution**\n\n**4. Use ONLY Arrhenius Model**\n```\nArrhenius is less sensitive to complexity\nIf R² > 0.95 → Acceptable alternative\n```\n⚠️ No Tg estimation possible",
+      "scenario1_prevention": "**🛡️ Prevention for Next Time:**\n\n1. ✅ Determine Tm via DSC BEFORE rheology\n2. ✅ Always measure at T > Tm + 20K\n3. ✅ Start with broad T-range (5-7 temperatures)\n4. ✅ Check Softening Point BEFORE trusting WLF fit",
+      "scenario2_title": "### ⚠️ Master Curve Does Not Align",
+      "scenario2_symptom": "**Symptom:** You see 'steps' or gaps between temperature curves in the master curve",
+      "scenario2_three_types": "**Three Different Patterns:**\n\n**Pattern A: Systematic Steps (Lowest T deviates most)**\n```\n230°C: ───────── (smooth)\n210°C: ─────────\n190°C: ───── ─── (small gap)\n170°C: ─── ─ ─── (large gap)\n```\n**Diagnosis:** Hard-segment crystallisation  \n**Solution:** Remove 170 and 190°C\n\n**Pattern B: All Curves Straight, But Not Parallel**\n```\nVertical offset without overlap\n```\n**Diagnosis:** Wrong shift factors  \n**Solution:** Re-run Auto-Align, adjust manually\n\n**Pattern C: Gaps at All Temperatures**\n```\nNo single T aligns well\n```\n**Diagnosis:** Measurement error or sample problem  \n**Solution:** Repeat entire measurement",
+      "scenario2_checklist": "**✅ Diagnostic Checklist:**\n\n□ **Van Gurp-Palmen Check**  \n  - Spreading visible? → Also expect master curve gaps\n\n□ **Shift Factor Trend Check**  \n  - Check log(aT) vs T plot (Tab 1)\n  - Must be smooth curve, no kinks\n\n□ **Temperature Range Check**  \n  - Lowest T > Tm + 20K?\n  - If not → Remove lowest T's\n\n□ **Auto-Align Quality**  \n  - R² of shift fit > 0.95?\n  - If not → Fine-tune manually\n\n□ **Data Quality**  \n  - Sufficient data points per T? (>8 per decade)\n  - Smooth curves without noise?",
+      "scenario3_title": "### ⚠️ Low Terminal Slope",
+      "scenario3_symptom": "**Symptom:** Dashboard shows Terminal Slope < 1.5 (ideal = 2.0)",
+      "scenario3_diagnostics": "**🔬 4-Step Diagnostics:**\n\n**STEP 1: Check whether Terminal Zone is Reached**\n```\nLook at Phase Angle (δ) in master curve:\n- δ > 75° reached? ✅ Go to step 2\n- δ < 75° everywhere? ❌ Measure at lower ω\n```\n\n**STEP 2: Quantify the Deviation**\n```\nSlope 1.9-2.1: ✅ OK, normal variation\nSlope 1.7-1.9: ⚠️ Slightly deviating, monitor\nSlope 1.4-1.7: ❌ Problem, action required\nSlope < 1.4:   🚨 SERIOUS problem\n```\n\n**STEP 3: Find the Cause**\n```\nCheck A: Han Plot\n  - Upward shift? → Crosslinking\n  - Overlap? → No chemistry issue\n\nCheck B: Highest Measurement Temperature\n  - T_max > Tm + 30K? → OK\n  - T_max < Tm + 20K? → Too low!\n\nCheck C: Time-Sweep @ T_max\n  - G' stable? → Material OK\n  - G' rising? → Crosslinking active\n```\n\n**STEP 4: Determine Action**\n```\nIf T too low:\n  → Repeat at higher T (+20-30°C)\n\nIf crosslinking:\n  → Lower T_max or use N₂\n\nIf both OK but slope still low:\n  → Material has inherent structure\n  → Possibly long-chain branching\n  → Accept or use alternative analysis\n```",
+      "scenario4_title": "### ℹ️ Zero-Shear Viscosity Fit Problem",
+      "scenario4_symptom": "**Symptom:** Cross model fit fails, η₀ = N/A",
+      "scenario4_causes": "**Possible Causes:**\n\n1. **Too Little Data in Terminal Zone**\n   - Lowest ω > 0.1 rad/s\n   - Newtonian plateau not reached\n\n2. **Too Much Noise**\n   - Raw data without smoothing\n   - Fit does not converge stably\n\n3. **Non-Newtonian Behaviour**\n   - Material shows no η₀ plateau\n   - Yield stress present\n\n**Quick Fix:**\n```\n1. Use smoothing (Tab 1 in app)\n2. Estimate η₀ ≈ η*(ω_min)\n3. Report as \"η* @ 0.01 rad/s\" instead of η₀\n```",
+      "scenario5_title": "### ℹ️ Poor Arrhenius Fit",
+      "scenario5_symptom": "**Symptom:** R² or Adj. R² < 0.90",
+      "scenario5_meaning": "**What does this mean?**\n\nThe shift factors do NOT follow a linear Arrhenius law.\n\n**Possible Causes:**\n\n| R² Value | Interpretation | Action |\n|----------|----------------|--------|\n| **0.85-0.90** | WLF component present | Try WLF fit, inspect curve |\n| **0.70-0.85** | Strong WLF, Arrhenius not suitable | Use WLF or VFT |\n| **< 0.70** | Non-linear, complex | Check vGP, TTS possibly invalid |\n\n**TTS Validity:**\n- R² > 0.95: ✅ TTS very reliable\n- R² 0.90-0.95: ⚠️ TTS OK but be cautious\n- R² < 0.90: ❌ TTS questionable, check vGP!",
+      "scenario6_title": "### 🚨 Crosslinking Detected!",
+      "scenario6_symptom": "**Symptom:** At high T, curves lie ABOVE those at low T",
+      "scenario6_immediate_action": "**IMMEDIATE ACTION:**\n\n🚨 **STOP USING THIS DATA**\n\nThe sample has changed during measurement → Data is NOT representative!\n\n**Cause:** NCO post-reaction at high temperature\n\n**Typical for TPU:**\n```\nT > 200°C → NCO + OH/NH₂ → Urethane/Urea bridges\n         → Crosslinks form\n         → G' rises\n         → Sample is now different from your original!\n```\n\n**How to Prevent:**\n\n1. ✅ **Lower T_max to < 200°C**\n2. ✅ **Use N₂ purge** (100 mL/min)\n3. ✅ **Short time-sweeps** (< 5 min per T)\n4. ✅ **Measure from HIGH to LOW T** (less residence time at high T)\n5. ✅ **Check NCO index** (must be < 0.3% for rheology)",
+      "scenario7_title": "### ⚫ Multi-Crossover System",
+      "scenario7_symptom": "**Symptom:** Dashboard shows 2+ crossovers",
+      "scenario7_hierarchy": "**Troubleshooting Hierarchy:**\n\n```\nSTART: 2+ crossovers found\n    │\n    ├─→ FIRST: Check Measurement Conditions\n    │   ├─ Strain > 10%? → Possibly LVE violated\n    │   ├─ Gap setting correct? → Recheck geometry\n    │   ├─ Sample loading OK? → Reload sample\n    │   └─ If all OK → Go to step 2\n    │\n    ├─→ SECOND: Check Van Gurp-Palmen\n    │   ├─ Strong spreading? → TTS invalid, expected\n    │   ├─ Small spreading? → Possibly measurement error\n    │   └─ Perfect overlap? → Inconsistent! Repeat\n    │\n    ├─→ THIRD: Check Cole-Cole\n    │   ├─ Asymmetric? → Bi-modal MWD, can explain\n    │   ├─ Normal? → Not MWD-related\n    │   └─ Shape changes with T? → Instability!\n    │\n    └─→ FOURTH: Decision\n        ├─ Consistent pattern? → Accept complexity\n        ├─ Inconsistent? → Repeat measurement\n        └─ Remains complex? → Use per-T data, skip TTS\n```",
+      "general_checklist_title": "✅ General Troubleshooting Checklist",
+      "general_checklist": "**📋 Use Before Every Measurement:**\n\n**Sample Prep:**\n- [ ] Dried (80°C, vacuum, 4-6h)?\n- [ ] Moisture content < 200 ppm (0.02%)?\n- [ ] Fresh sample (no regrind > 3×)?\n- [ ] Homogeneous (no visible defects)?\n\n**Instrument Setup:**\n- [ ] Geometry clean & correct gap?\n- [ ] N₂ purge active (100 mL/min)?\n- [ ] Temperature calibration recent?\n- [ ] Normal force < 2N after loading?\n\n**Measurement Design:**\n- [ ] Strain sweep done (determine LVE)?\n- [ ] Strain in LVE range (typically 1-5%)?\n- [ ] Temperature range > Tm + 20K?\n- [ ] Sufficient points/decade (>8)?\n\n**During Measurement:**\n- [ ] Time-sweep @ T_max stable?\n- [ ] No sample slip (check torque)?\n- [ ] Temperature stable (±0.5°C)?\n- [ ] G' and G'' smooth (no jumps)?\n\n**Data Validation:**\n- [ ] Van Gurp-Palmen overlap?\n- [ ] Han plot overlap?\n- [ ] Crossover: 0 or 1?\n- [ ] R² > 0.95?\n\n**If ANY ❌:**\n→ Stop, troubleshoot, repeat"
     }
   },
-  "analysis": {
-    "page_title": "Rheology Analysis",
-    "upload_title": "📂 Data Upload",
-    "upload_intro": "Upload your rheology measurement file to start the analysis.",
-
-    "upload": {
-      "drag_drop": "Drag & drop file here",
-      "select_file": "Select file",
-      "supported_formats": "Supported formats: CSV, XLSX",
-      "parse_header": "Detect headers automatically",
-      "parse_units": "Read units from file",
-      "preview": "Preview data"
+  "data_troubleshooting": {
+    "page_title": "Data & Troubleshooting - RheoApp",
+    "page_icon": "⚙️",
+    "main_title": "⚙️ Data Specifications & Troubleshooting",
+    "main_intro": "Make sure your data is correctly formatted to prevent errors in calculations. \nThis page helps you prepare your files and resolve common problems.",
+    "format": {
+      "header": "1. Data Format Specifications",
+      "intro": "The app accepts `.csv` or `.txt` files (tab- or semicolon-separated). \nThe following columns are **required** for a complete analysis:",
+      "example_title": "Example of the correct structure:",
+      "example_table": {
+        "columns": [
+          "T (°C)",
+          "omega (rad/s)",
+          "G' (Pa)",
+          "G'' (Pa)",
+          "eta* (Pa·s)"
+        ],
+        "rows": [
+          [
+            170,
+            0.1,
+            1250,
+            3400,
+            36220
+          ],
+          [
+            170,
+            0.25,
+            2100,
+            4800,
+            21000
+          ],
+          [
+            180,
+            0.1,
+            850,
+            2100,
+            22600
+          ]
+        ]
+      },
+      "column_guide_title": "Guide to column names",
+      "column_guide_text": "The app searches for specific keywords in the headers. Make sure your columns have names such as:\n* **Temperature**: `Temperature`, `Temp`, `T`\n* **Frequency**: `Angular Frequency`, `omega`, `rad/s`\n* **Storage Modulus**: `Storage Modulus`, `G'`, `Gp`\n* **Loss Modulus**: `Loss Modulus`, `G''`, `Gpp`\n* **Complex Viscosity**: `Complex Viscosity`, `eta*`, `Eta_star`",
+      "file_requirements": "**📋 File Requirements:**\n\n**Supported Formats:**\n- ✅ `.csv` (comma-separated)\n- ✅ `.txt` (tab-separated)\n- ✅ `.tsv` (tab-separated)\n\n**Encoding:**\n- ✅ UTF-8 (preferred)\n- ✅ UTF-16 (automatically detected)\n- ✅ Latin-1 (fallback)\n\n**Separator:**\n- Auto-detection of `,` or `\t` or `;`\n- Decimal separator: `.` or `,` (both OK)\n\n**Structure:**\n- Header row: REQUIRED (first row with column names)\n- Data rows: Numerical values\n- Empty rows: Are skipped\n- Comment rows: May be present (are ignored)",
+      "typical_sources": "**🔧 Typical Sources & Compatibility:**\n\n| Instrument | Format | Directly Compatible? | Notes |\n|------------|--------|---------------------|-------|\n| **TA Instruments (TRIOS)** | .txt (tab-separated) | ✅ YES | Export as \"Tab Delimited\" |\n| **Anton Paar (RheoCompass)** | .csv | ✅ YES | Default export works |\n| **Thermo Fisher (HAAKE)** | .txt | ✅ YES | Choose \"ASCII Export\" |\n| **Malvern (OMNISEC)** | .csv | ⚠️ Usually | Check column names |\n| **Custom Excel** | .csv | ⚠️ Depends | Export via \"Save As CSV (UTF-8)\" |\n\n**Pro Tip:** When in doubt, export to `.txt` with tab separator – this works almost always!",
+      "minimum_requirements": "**📊 Minimum Data Requirements:**\n\n**Temperatures:**\n- Minimum: **3 temperatures** (for reliable TTS)\n- Recommended: **5-7 temperatures**\n- Ideal: Evenly distributed across range\n\n**Frequencies per Temperature:**\n- Minimum: **8 points per decade**\n- Recommended: **10-12 points per decade**\n- Range: Preferably **0.01 - 100 rad/s** (3-4 decades)\n\n**Overlap:**\nFor good TTS, there must be **overlap** between temperatures:\n```\n170°C: 0.01 - 100 rad/s\n190°C: 0.01 - 100 rad/s  ← Same freq range!\n210°C: 0.01 - 100 rad/s\n```\n\n**Data Quality:**\n- Smooth curves (no large jumps)\n- Consistent number of points per T\n- G' and G'' both positive (always!)\n- Logical η* values (G*/ω must be consistent)"
     },
-
-    "columns": {
-      "frequency": "Frequency",
-      "temperature": "Temperature",
-      "g_storage": "Storage modulus G'",
-      "g_loss": "Loss modulus G''",
-      "viscosity_complex": "Complex viscosity",
-      "phase_angle": "Phase angle",
-      "time": "Time"
+    "troubleshooting": {
+      "header": "2. Troubleshooting",
+      "column_problem_title": "What goes wrong?",
+      "column_solution_title": "How do I fix it?",
+      "error_negative_c1": "**Error: 'Negative C1 found' (WLF)**",
+      "solution_negative_c1": "- **C1 Check**: Your reference temperature is probably too close to a phase transition or the shift factors are too extreme. Choose a different $T_{ref}$.",
+      "error_negative_c1_detailed": "**🚨 Negative WLF C₁ - Extended Troubleshooting**\n\n**Symptom:**\n```\nWLF fitting yields: C₁ = -12.3  ← Physically impossible!\n```\n\n**Root Cause:**\nWLF theory requires C₁ > 0 (positive).\nNegative value means your material does **not** behave according to WLF.\n\n**Most Common Causes for TPU:**\n\n1. **T_ref chosen too low** (< Softening Point)\n   - Hard segments not yet fully melted\n   - Morphology changes with temperature\n   - → Shift factors follow non-WLF trend\n\n2. **Insufficient temperatures** (< 4)\n   - WLF has 2 parameters to fit\n   - With 3 points the fit is very unreliable\n   - → Nonsense parameter values\n\n3. **Extreme shift factors** (log aT > 5)\n   - Temperature range too large\n   - WLF model does not extend that far\n   - → Extrapolation beyond validity\n\n**Solutions (step-by-step):**\n\n**STEP 1: Check Van Gurp-Palmen** (Tab 2 in main app)\n```\nIF spreading visible:\n  → This EXPLAINS negative C₁\n  → Material is thermorheologically complex\n  → GO TO Step 2\nELSE:\n  → Inconsistent! Possibly fit artefact\n  → GO TO Step 3\n```\n\n**STEP 2: Increase T_ref**\n```\nChoose T_ref = HIGHEST measured temperature\n\nFor example:\nMeasured at: 150, 170, 190, 210, 230°C\nCHOOSE: T_ref = 230°C (not 150 or 190!)\n\nRationale:\nAt 230°C hard segments are fully melted\n→ Build master curve from homogeneous phase\n```\n\n**STEP 3: Remove Lowest Temperatures**\n```\nIf you have 5 T: 150, 170, 190, 210, 230°C\n\nTry:\nOption A: Remove 150°C → Use 170-230°C\nOption B: Remove 150 + 170°C → Use 190-230°C\n\nCheck after each step whether C₁ > 0\n```\n\n**STEP 4: Use Arrhenius Alternative**\n```\nIF WLF remains negative AFTER steps 2+3:\n  → Use ONLY Arrhenius model\n  → Check whether R² > 0.95\n  → Accept that WLF is not applicable\n```\n\n**Prevention for the Future:**\n- ✅ Determine Softening Point via DSC before rheology\n- ✅ Always measure > Tm_hard + 20K\n- ✅ Start with broad T-range (6+ temperatures)\n- ✅ Check vGP plot BEFORE trusting WLF parameters",
+      "warning_low_r2": "**Warning: 'R² < 0.90'**",
+      "solution_low_r2": "- **Improving R²**: Remove extreme temperatures that do not satisfy TTS (e.g. where crystallisation begins).",
+      "warning_low_r2_detailed": "**⚠️ Low Arrhenius R² - Diagnostics**\n\n**Symptom:**\n```\nArrhenius fit: R² = 0.78  ← Below acceptable limit (0.90)\n```\n\n**What does this mean?**\nThe shift factors do **not follow a linear Arrhenius law**.\n\n**Interpretation per R² Range:**\n\n| R² Value | Meaning | Action |\n|----------|---------|--------|\n| **0.95 - 1.00** | ✅ Excellent, pure Arrhenius | Proceed with confidence |\n| **0.90 - 0.95** | ⚠️ Acceptable, slight WLF component | OK for practice, be cautious |\n| **0.80 - 0.90** | ❌ Weak, significant curvature | Try WLF, remove extreme T |\n| **< 0.80** | 🚨 Poor, TTS questionable | Check vGP, possibly not valid |\n\n**Possible Causes:**\n\n1. **WLF behaviour dominates**\n   - Temperatures near Tg_soft\n   - Curved log(aT) vs 1/T plot\n   - → Use WLF model instead of Arrhenius\n\n2. **Outlier temperature(s)**\n   - One T does not fit the trend\n   - Possibly measurement error or phase transition\n   - → Remove that T, refit\n\n3. **Temperature range too broad**\n   - Arrhenius does not apply over >100K range\n   - Transitions into WLF regime\n   - → Split into two regimes or use VFT\n\n**Solution Step-by-Step:**\n\n**CHECK 1: Visualise the Fit**\n```\nPlot log(aT) vs 1/T (Tab 4 in app)\nDo you see:\n  - Linear? → Possible outlier, remove 1 point\n  - Curved? → WLF regime, switch model\n  - Chaotic? → TTS invalid, check vGP\n```\n\n**CHECK 2: Try WLF**\n```\nIF WLF gives:\n  - C₁ > 0 AND C₁ = 8-17 → ✅ WLF is better!\n  - C₁ < 0 → ❌ Both models fail → TTS problem\n```\n\n**CHECK 3: Temperature Selection**\n```\nRemove step by step:\n1. Lowest T → Refit → Check R²\n2. Highest T → Refit → Check R²\n3. Keep only 'core' range (middle 5 T)\n\nGoal: Reach R² > 0.90\n```\n\n**CHECK 4: TTS Validity**\n```\nIF R² remains low AFTER all steps:\n  → Check Van Gurp-Palmen spreading\n  → If spreading > 10° → TTS is NOT valid\n  → Accept and use per-T data\n```",
+      "error_fit_failed": "**Error: 'Fit failed' at Zero-Shear**",
+      "solution_fit_failed": "- **Fit Success**: The Cross model needs more data in the low frequency (terminal zone).",
+      "error_fit_failed_detailed": "**❌ η₀ Fit Failure - Troubleshooting**\n\n**Symptom:**\n```\nCross model fit failed\nη₀ = N/A (not available)\n```\n\n**Root Cause Analysis:**\n\n**Cause 1: Insufficient Data in Terminal Zone**\n```\nCross model extrapolation requires:\n- Data at δ > 75° (viscous regime)\n- Multiple points in Newtonian plateau\n- ω_min < 0.1 rad/s (ideally < 0.01)\n\nIf you only have:\n  ω_min = 0.1 rad/s AND δ_max = 60°\n  → Plateau not reached → Fit fails\n```\n\n**Cause 2: Noisy Data**\n```\nIf η*(ω) curve has a lot of noise:\n  → Fit does not converge stably\n  → Algorithm gives up\n```\n\n**Cause 3: Non-Newtonian Behaviour**\n```\nMaterial shows NO η₀ plateau:\n  - Yield stress present\n  - Gel behaviour\n  - Crosslinked system\n  → Cross model is not applicable!\n```\n\n**Solutions:**\n\n**FIX 1: Use Smoothing** (Tab 1 in app)\n```\nSteps:\n1. Go to Tab 1: Master Curve\n2. Scroll to \"💾 Smooth Export\"\n3. Enable smoothing\n4. Choose strength = 0.001 (light) to 0.01 (medium)\n5. Re-run analysis\n\nRationale:\nSmoothing removes noise → Fit converges better\n```\n\n**FIX 2: Manual η₀ Estimate**\n```\nIf fit keeps failing:\n\nη₀ ≈ η*(ω_min) / correction_factor\n\nWhere:\n  correction_factor = 1.1 - 1.3 (typical)\n\nExample:\n  η*(0.01 rad/s) = 4.2×10⁵ Pa·s\n  → η₀ ≈ 4.2×10⁵ / 1.15 ≈ 3.7×10⁵ Pa·s\n\n⚠️ This is an ESTIMATE, not an exact fit!\n```\n\n**FIX 3: Extend Frequency Range**\n```\nFor next measurement:\n- Measure to lower ω (0.01 or even 0.001 rad/s)\n- Ensure δ > 80° is reached\n- Check that G'' ∝ ω^1 (linear in log-log)\n\nThis guarantees terminal zone is reached\n```\n\n**FIX 4: Accept Limitation**\n```\nIf material is inherently non-Newtonian:\n- Report η* @ 0.01 rad/s instead of η₀\n- Or: Report \"Terminal viscosity not reached\"\n- Use value for relative comparison\n\nExample report:\n  \"η* @ 0.01 rad/s = 3.2×10⁵ Pa·s\"\n  (ISO: η₀ requires extrapolation to ω→0)\n```",
+      "problem_stepping": "**Problem: Master Curve 'steps' (does not align)**",
+      "solution_stepping": "- **Stepping**: Use the **Manual Shift** in Tab 1 to manually slide the curves onto each other.",
+      "problem_stepping_detailed": "**🔧 Master Curve Stepping - Complete Guide**\n\n**Symptom:**\n```\nMaster curve shows 'steps' or gaps:\n\n230°C: ──────────\n210°C: ─────── (gap)\n190°C: ────  (gap)\n170°C: ──  (large gap)\n\nCurves do NOT connect!\n```\n\n**Diagnosis Flowchart:**\n\n```\nSTART: Master curve steps\n    │\n    ├─→ Q1: Is it SYSTEMATIC? (Lowest T deviates most)\n    │   ├─ YES → Hard-segment crystallisation\n    │   │      → SOLUTION A (below)\n    │   └─ NO → Go to Q2\n    │\n    ├─→ Q2: Are curves STRAIGHT but not parallel?\n    │   ├─ YES → Wrong shift factors\n    │   │      → SOLUTION B (below)\n    │   └─ NO → Go to Q3\n    │\n    ├─→ Q3: Gaps at ALL temperatures?\n    │   ├─ YES → Measurement error or sample problem\n    │   │      → SOLUTION C (below)\n    │   └─ NO → Inconsistent pattern → Repeat measurement\n```\n\n**SOLUTION A: Crystallisation-Related Stepping**\n\n**Symptoms:**\n- Systematic deviation\n- Lowest T deviates most\n- vGP plot also shows spreading\n\n**Fix:**\n```python\n# Step 1: Identify problem temperatures\nIF vGP spreading at T < 180°C:\n  Problem T's = [150, 170°C]\n\n# Step 2: Deselect in sidebar\nGo to sidebar → \"🌡️ Select Temperatures\"\nDESELECT: 150°C and 170°C\nKEEP: 190, 210, 230°C\n\n# Step 3: Re-run Auto-Align\nClick \"🚀 Auto-Align\"\n\n# Result:\nMaster curve now without gaps!\n```\n\n**SOLUTION B: Shift Factor Optimisation**\n\n**Symptoms:**\n- Curves are straight (good shape)\n- But do not lie exactly on each other\n- Auto-Align worked sub-optimally\n\n**Fix - Manual Adjustment:**\n```\nStep 1: Inspect the gaps\n  - Which T is too high/low?\n  - By how many decades?\n\nStep 2: Go to Tab 1 sidebar\n  - Scroll to \"🎚️ Manual Shift Factors\"\n  - See sliders for each T\n\nStep 3: Adjust per temperature\n  Example:\n    190°C curve lies 0.3 decades too low\n    → Move 190°C slider to +0.3\n    → Curve shifts to the right\n    → Check overlap → Repeat\n\nStep 4: Fine-tune\n  - Iteratively adjust until perfect overlap\n  - Use zoom in plot to check precision\n\nPro Tip:\n  Start with largest deviation first\n  Work from outside in (extreme T's first)\n```\n\n**SOLUTION C: Data Quality Issues**\n\n**Symptoms:**\n- Gaps everywhere\n- No systematic pattern\n- Possibly noise or jumps in curves\n\n**Diagnostic Checks:**\n\n**Check 1: Data Completeness**\n```\nHow many points per T?\nIF < 8 points per decade:\n  → Too little data for smooth curve\n  → Repeat measurement with more points\n```\n\n**Check 2: Frequency Overlap**\n```\nDo you have overlap between T's?\n\nExample GOOD:\n  170°C: 0.01 - 100 rad/s\n  190°C: 0.01 - 100 rad/s  ✅ Overlap!\n\nExample BAD:\n  170°C: 0.1 - 10 rad/s\n  190°C: 1 - 100 rad/s  ❌ No overlap!\n\nFix: Repeat with consistent freq range\n```\n\n**Check 3: Strain Amplitude**\n```\nWere you in LVE (Linear Visco-Elastic) regime?\n\nIF strain > 10%:\n  → Possibly non-linear effects\n  → Curves become distorted\n  → Repeat with strain 1-5%\n```\n\n**Check 4: Sample Quality**\n```\nWas the sample:\n  - Dried? (< 200 ppm moisture)\n  - Homogeneous? (no bubbles/voids)\n  - Fresh? (no regrind > 3×)\n\nIF any NO:\n  → Repeat with fresh, properly prepared sample\n```\n\n**Final Resort:**\n```\nIf EVERYTHING has been tried and gaps remain:\n\n→ Material may be fundamentally\n  thermorheologically COMPLEX\n→ TTS is NOT valid for this material\n→ Use data per individual T\n→ Report without master curve\n```",
+      "common_issues_title": "📋 Quick Reference: Common Problems",
+      "common_issues_table": "| Symptom | Probable Cause | Quick Fix | Reference |\n|---------|----------------|-----------|------------|\n| **Negative WLF C₁** | T_ref < Softening Point | Choose T_ref = highest T | Interpretation Guide → Scenario 1 |\n| **R² < 0.90** | WLF behaviour or outlier | Try WLF, remove extreme T | Theory → Thermal Models |\n| **η₀ = N/A** | Insufficient terminal data | Use smoothing or lower ω | Dashboard → Molecular Analysis |\n| **Master curve steps** | Crystallisation at low T | Remove lowest T's | Interpretation Guide → vGP |\n| **Multiple crossovers** | Thermorheologically complex | Check vGP, increase T_min | Interpretation Guide → Crossover |\n| **Han plot shift** | Crosslinking/degradation | Lower T_max, use N₂ | Interpretation Guide → Han Plot |\n| **vGP spreading** | TTS not valid | Increase all T, check Tm | Interpretation Guide → vGP |\n| **Terminal slope low** | Incomplete melt | Increase T (+20°C) | Theory → Structural Parameters |\n| **Data not loading** | Wrong format | Check column names | This page → Section 1 |\n| **Fit does not converge** | Noise or too little data | Smoothing or more points | This page → Section 2 |"
     },
-
-    "units": {
-      "frequency": "Hz / rad·s⁻¹",
-      "temperature": "°C",
-      "modulus": "Pa",
-      "viscosity": "Pa·s",
-      "time": "s"
+    "tpu_tips": {
+      "header": "3. Tips for TPU Measurements",
+      "moisture_tip": "**Did you know?** TPU is very sensitive to moisture (hydrolysis). If your measurements are not reproducible, \ncheck whether the granulate has been dried for at least 3 hours at 80°C (vacuum recommended).",
+      "thermal_stability_title": "### 🌡️ Thermal Stability",
+      "thermal_stability_text": "Always perform a 'Time Sweep' at the highest measurement temperature to check that the material remains stable during the frequency sweep.",
+      "thermal_stability_extended": "**Complete Time-Sweep Protocol:**\n\n**Purpose:**\nVerification that sample is chemically stable at T_max.\n\n**Procedure:**\n```\n1. Heat sample to T_max (highest measurement temperature)\n2. Equilibrate: Wait 5 minutes\n3. Time-sweep settings:\n   - Frequency: 1 rad/s (or 6.28 rad/s = 1 Hz)\n   - Strain: 1% (LVE)\n   - Time: 10 minutes\n   - Interval: 1 point per 10 seconds\n\n4. Monitor G' and G''\n```\n\n**Acceptance Criteria:**\n\n| Observation | Meaning | Action |\n|-------------|---------|--------|\n| **G' drift < ±5%** | ✅ Stable | Proceed with freq-sweep |\n| **G' drift 5-10%** | ⚠️ Slightly unstable | Acceptable but be cautious |\n| **G' rises > 10%** | ❌ Crosslinking! | Lower T_max, use N₂ |\n| **G' drops > 10%** | ❌ Degradation! | Lower T_max, check moisture |\n\n**Typical Values TPU @ 200°C:**\n- Initial: G' = 5×10⁴ Pa, G'' = 2×10⁴ Pa\n- After 10 min: G' = 5.1×10⁴ Pa (2% rise) ✅ OK\n- IF after 10 min: G' = 6×10⁴ Pa (20% rise) ❌ NOT OK!\n\n**Pro Tips:**\n- Measure time-sweep BEFORE freq-sweep (verification first)\n- If unstable: Lower T_max by 10-20°C\n- Use N₂ purge (100 mL/min) at T > 200°C\n- For critical measurements: Repeat time-sweep AFTER freq-sweep\n  (to check post-measurement degradation)",
+      "hydrolysis_title": "### 💧 Hydrolysis",
+      "hydrolysis_text": "A rapid drop in G' over time at constant T and $\\omega$ usually indicates moisture in the sample.",
+      "hydrolysis_extended": "**Complete Hydrolysis Prevention Protocol:**\n\n**Why is this Critical for TPU?**\n\nTPU urethane/urea bonds are sensitive to water:\n```\nR-NH-CO-O-R' + H₂O → R-NH₂ + HO-CO-O-R'\n (Urethane)              (Amine)    (Carboxylic acid)\n\nResult:\n- Chain scission → Mw decreases\n- η₀ drops drastically (30-50%!)\n- Processability changes\n```\n\n**Critical Moisture Levels:**\n- < 200 ppm (0.02%): ✅ Acceptable for processing\n- 200-500 ppm: ⚠️ Moderate hydrolysis (still processable)\n- 500-1000 ppm: ❌ Significant hydrolysis (poor quality)\n- > 1000 ppm: 🚨 Severe (bubbles, defects, property loss)\n\n**For Rheology Measurements:**\n→ Aim for < 100 ppm for reproducible results!\n\n**Drying Protocol (Gold Standard):**\n\n```\nMETHOD A: Vacuum Oven (Best)\n─────────────────────────────\n1. Granulate in thin layer (< 2 cm)\n2. Temperature: 80°C\n3. Vacuum: < 100 mbar (< 0.1 bar)\n4. Time: 4-6 hours\n5. Cool under vacuum\n6. Transfer directly to dry container\n\nMETHOD B: Hot Air Dryer (Alternative)\n────────────────────────────────────\n1. Hopper dryer with dry air (<-40°C dewpoint)\n2. Temperature: 80-90°C\n3. Time: 6-8 hours (longer without vacuum)\n4. Airflow: 0.5-1.0 cfm/lb\n5. Process directly after drying\n\nMETHOD C: Desiccant (Emergency)\n────────────────────────────\n1. Desiccator with fresh silica gel\n2. Temperature: Room temperature\n3. Time: 24-48 hours (slow!)\n4. Only for small samples (< 100g)\n```\n\n**Moisture Testing:**\n\n**Test 1: Visual Check (Quick & Dirty)**\n```\nHeat sample on hotplate to 200°C\nLook for bubbles/steam\nIF bubbles → Moisture present! → Dry further\n```\n\n**Test 2: Karl Fischer Titration (Accurate)**\n```\nTake 1-2 gram sample\nKF titration → ppm H₂O directly\nTarget: < 200 ppm\nInvestment: ~€5000 for instrument\n```\n\n**Test 3: LOD (Loss on Drying)**\n```\nWeigh sample before and after 4h @ 80°C vacuum\nΔmass / mass_initial × 10⁶ = ppm H₂O\nSimple but less precise\n```\n\n**Storage After Drying:**\n```\n✅ Sealed bag with desiccant sachet\n✅ In desiccator\n✅ Process within 4 hours\n\n❌ Open to air (reabsorbs within 1h!)\n❌ Regular plastic bag (not moisture-proof)\n```\n\n**Symptoms of Hydrolysis in Rheology:**\n\n| Symptom | With Hydrolysis | Dry Sample |\n|---------|-----------------|------------|\n| **η₀ batch-to-batch** | Large variation (±30%) | Consistent (±5%) |\n| **Time-sweep G'** | Drops > 10%/10min | Stable < 5% |\n| **Master curve** | Less smooth | Smooth, consistent |\n| **Han plot** | Downward shift | Overlap |\n| **Sample appearance** | Bubbles, frosting | Transparent/homogeneous |\n\n**Real-World Example:**\n\n```\nCase: Injection Moulding TPU Shore 85A\n\nBatch 1 (NOT DRIED):\n  - Moisture content: 850 ppm\n  - η₀ = 2.1×10⁵ Pa·s\n  - Processing: Lots of flash, splay marks\n  - Mech properties: -20% tensile strength\n\nBatch 1 (AFTER DRYING @ 80°C, 6h vacuum):\n  - Moisture content: 120 ppm ✅\n  - η₀ = 3.2×10⁵ Pa·s (+52%!)\n  - Processing: Clean parts, no defects\n  - Mech properties: On-spec ✅\n\nLesson: Drying is NOT optional - it's CRITICAL!\n```",
+      "strain_title": "### 🌀 Strain",
+      "strain_text": "Make sure you measure within the Linear Visco-Elastic (LVE) region (usually < 5% strain for TPU melts).",
+      "strain_extended": "**Complete LVE (Linear Visco-Elastic) Guide:**\n\n**What is LVE and Why is it Important?**\n\nLVE = regime where moduli are independent of strain amplitude.\n```\nStrain 0.1%: G' = 50,000 Pa\nStrain 1%:   G' = 50,000 Pa  ✅ LVE!\nStrain 5%:   G' = 50,000 Pa\nStrain 10%:  G' = 48,000 Pa  ❌ Non-linear!\nStrain 50%:  G' = 35,000 Pa  ❌ Structure breaking!\n```\n\n**Why is this Critical?**\n- TTS theory applies ONLY in the LVE regime\n- Outside LVE: Structure changes during measurement\n- Non-linear effects make master curve invalid\n\n**How to Determine LVE for YOUR Sample:**\n\n**STEP 1: Strain Sweep (PRE-MEASUREMENT REQUIRED!)**\n\n```\nTest Conditions:\n- Temperature: T_max (highest measurement temperature)\n- Frequency: 1 rad/s (or 10 rad/s)\n- Strain: 0.01% to 100% (log sweep)\n- Points: 10-15 per decade\n\nPlot: G' vs Strain (log-log)\n\nInterpretation:\n  ┌─────────────────\n  │      G' plateau (LVE regime)\n  │ ▬▬▬▬▬▬▬▬▬▬\n  │           ╲\n  │            ╲  ← Breakdown\n  │             ╲\n  └──────────────────→ Strain\n```\n\n**STEP 2: Identify LVE Limit**\n\n```\nLVE limit = Strain where G' drops > 5% from plateau\n\nExample:\n  G' plateau = 50,000 Pa\n  At 7% strain: G' = 47,000 Pa\n  → Drop = (50-47)/50 × 100% = 6%\n  → LVE limit ≈ 6-7%\n\nSafe choice for freq-sweep:\n  Use strain = LVE limit / 2 = 3-3.5%\n```\n\n**Typical LVE Limits for TPU:**\n\n| TPU Type | Temperature | LVE Limit (Strain %) |\n|----------|-------------|---------------------|\n| **Soft (Shore 70A)** | 180°C | 10-20% (very broad) |\n| **Medium (Shore 85A)** | 190°C | 5-10% |\n| **Hard (Shore 60D)** | 200°C | 2-5% |\n| **Very Hard (Shore 75D)** | 210°C | 1-3% (narrow!) |\n\n**Why do these differ?**\n\n```\nSoft TPU:\n- Much soft-segment (flexible)\n- Little hard-segment network\n- → Large deformations possible without breakdown\n\nHard TPU:\n- Much hard-segment (rigid)\n- Strong crystalline network\n- → Small strain already sufficient for breakdown\n```\n\n**STEP 3: Choose Safe Strain for Freq-Sweep**\n\n**Conservative Approach (Recommended):**\n```\nMeasured LVE limit = 8%\n→ Use 50% of limit = 4% strain\n→ Safe margin for variation\n```\n\n**Aggressive Approach (More torque/signal):**\n```\nMeasured LVE limit = 8%\n→ Use 70% of limit = 5.6% strain\n→ Higher torque (better for low G')\n→ But: Risk of edge of LVE\n```\n\n**WRONG: No Strain Sweep (Blind Measuring)**\n```\nUse \"default 1%\"\n→ Possibly too low (poor signal/noise)\n→ Or too high (non-linear!)\n→ Always VERIFY with strain sweep!\n```\n\n**Troubleshooting Strain Issues:**\n\n**Problem 1: LVE Limit Changes with Temperature**\n```\n@ 170°C: LVE limit = 3%\n@ 210°C: LVE limit = 8%\n\nSolution A: Use Conservative Minimum\n  → Use 2% everywhere (safe but low torque)\n\nSolution B: Optimise per Temperature\n  → At low T: 2%\n  → At high T: 5%\n  → Requires manual adjustment per T\n```\n\n**Problem 2: Very Low LVE Limit (< 1%)**\n```\nCauses:\n- Strongly crosslinked/gel system\n- Very hard TPU (> Shore 70D)\n- Filled compound (glass fibre etc)\n\nSolution:\n- Use 0.5% strain (low!)\n- Check torque: > 10 µNm OK\n- IF torque < 5 µNm → Signal too noisy\n  → Consider larger geometry (50mm plates)\n```\n\n**Best Practices Summary:**\n\n✅ **ALWAYS run strain sweep first**\n✅ Use strain = 50% of LVE limit\n✅ Verify torque > 10 µNm\n✅ For TPU melt: Start with 3% strain (safe default)\n✅ Document chosen strain in report\n\n❌ Never measure at strain > LVE limit\n❌ Don't use \"default 10%\" without checking\n❌ Don't assume LVE from literature (verify!)",
+      "additional_tips_title": "**🔬 Extra TPU-Specific Tips:**",
+      "additional_tips": "**1. Sample Loading Technique**\n```\n✅ Good Method:\n  - Pre-heat geometry to T_load\n  - Place sample QUICKLY (< 10 sec exposure)\n  - Close gap immediately\n  - Trim excess material\n  - 5 min equilibration before measurement\n\n❌ Poor Method:\n  - Sample exposed to air at T_load for long time (oxidation!)\n  - Geometry cold (sample solidifies)\n  - Too much material (squeeze-out during measurement)\n```\n\n**2. Gap Setting (Parallel Plates)**\n```\nFor TPU melt:\n- Gap: 1.0 - 1.5 mm (standard)\n- Sample diameter: 25 mm or 40 mm (common)\n- Aspect ratio: D/gap > 20 (rule of thumb)\n\nVerification:\n- Normal force < 2N after loading ✅\n- No sample squeeze-out during measurement ✅\n- Homogeneous sample between plates (no bubbles) ✅\n```\n\n**3. N₂ Purge (Oxidation Prevention)**\n```\nALWAYS use when:\n- T > 200°C (critical!)\n- T > 180°C (recommended)\n- Long measurements (> 30 min total)\n\nFlow rate: 50-100 mL/min\nPlacement: Purge hood over geometry\nCost: Negligible vs sample value!\n```\n\n**4. Multiple Samples (Reproducibility Check)**\n```\nFor critical batches:\nMeasure 3 independent samples:\n  Sample A: η₀ = 3.2×10⁵ Pa·s\n  Sample B: η₀ = 3.1×10⁵ Pa·s\n  Sample C: η₀ = 3.3×10⁵ Pa·s\n  \n  Average: 3.2×10⁵ Pa·s\n  Std dev: 0.1×10⁵ Pa·s\n  CV = 3.1% ✅ Good reproducibility!\n\nIF CV > 10%:\n  → Sample inhomogeneity\n  → Drying inconsistent\n  → Instrument issue\n```\n\n**5. Reporting Requirements**\n```\nMinimum in report:\n- Sample ID & batch number\n- Drying conditions (T, time, method)\n- Strain amplitude (verify LVE!)\n- Temperature range & T_ref\n- Model used (Arrhenius/WLF)\n- R² of fits\n- η₀, G_N⁰ with unit\n- TTS quality (vGP overlap? Yes/No)\n\nOptional but valuable:\n- Softening point\n- Number of crossovers\n- Terminal slope\n- Moisture content (if measured)\n```"
     },
-
-    "cleaning_title": "🧹 Data Cleaning",
-    "cleaning": {
-      "remove_outliers": "Remove outliers",
-      "trim_edges": "Trim edge points",
-      "min_points": "Minimum points per temperature",
-      "interpolate": "Interpolate missing values",
-      "smoothing": "Apply smoothing"
-    },
-
-    "grouping_title": "🗂️ Temperature Grouping",
-    "grouping": {
-      "auto_group": "Automatic grouping",
-      "manual_group": "Manual grouping",
-      "tolerance": "Temperature tolerance",
-      "groups_found": "Temperature groups found: {count}"
-    },
-
-    "mastercurve_title": "🧵 Master Curve",
-    "mastercurve": {
-      "build": "Build master curve",
-      "rebuilt": "Master curve rebuilt",
-      "reference_temp": "Reference temperature",
-      "shift_model": "Shift model",
-      "horizontal_shift": "Horizontal shift only",
-      "vertical_shift": "Include vertical shift",
-      "show_shifts": "Show shift factors"
-    },
-
-    "shift_table_title": "📋 Shift Factor Table",
-    "shift_table": {
-      "temp": "Temperature",
-      "aT": "Shift factor aT",
-      "log_aT": "log(aT)",
-      "used": "Used in fit"
-    },
-
-    "model_fit_title": "📐 Model Fit",
-    "model_fit": {
-      "fit_shift_model": "Fit shift model",
-      "fit_viscosity_model": "Fit viscosity model",
-      "parameter_table": "Parameter table",
-      "confidence": "Confidence",
-      "residuals": "Residuals",
-      "show_residuals": "Show residual plot"
-    },
-
-    "plots": {
-      "modulus_plot": "Modulus vs Frequency",
-      "viscosity_plot": "Viscosity vs Frequency",
-      "phase_plot": "Phase Angle Plot",
-      "vgp_plot": "Van Gurp–Palmen Plot",
-      "shift_plot": "Shift Factor Plot"
-    },
-
-    "export_title": "📤 Export Results",
-    "export": {
-      "report": "Export report",
-      "parameters": "Export parameters",
-      "shift_factors": "Export shift factors",
-      "mastercurve": "Export master curve data",
-      "figures": "Export figures"
-    },
-
-    "tooltips": {
-      "reference_temp": "Temperature where aT = 1 and no horizontal shift is applied",
-      "shift_model": "Model used to describe temperature dependence of aT",
-      "terminal_zone": "Lowest frequency region where melt should be Newtonian",
-      "plateau_region": "Frequency region where G' is approximately constant",
-      "crossover": "Point where G' equals G''",
-      "r2": "Coefficient of determination — goodness of fit"
-    }
-  },
-  "report": {
-    "page_title": "Report",
-    "main_title": "📄 Rheology Analysis Report",
-    "intro": "This report summarizes the rheological analysis, fitted models, and processing interpretation.",
-
-    "sections": {
-      "input": "Input Data",
-      "preprocessing": "Preprocessing",
-      "mastercurve": "Master Curve",
-      "shift_model": "Shift Model",
-      "viscosity_model": "Viscosity Model",
-      "structural": "Structural Parameters",
-      "quality": "Quality Assessment",
-      "interpretation": "Processing Interpretation",
-      "warnings": "Warnings & Limitations"
-    },
-
-    "input": {
-      "temperatures": "Measured temperatures",
-      "points": "Number of data points",
-      "frequency_range": "Frequency range",
-      "source": "Data source"
-    },
-
-    "preprocessing": {
-      "cleaning": "Cleaning steps applied",
-      "grouping": "Temperature grouping",
-      "removed_points": "Removed points",
-      "interpolation": "Interpolation applied"
-    },
-
-    "mastercurve": {
-      "built": "Master curve constructed",
-      "reference_temp": "Reference temperature",
-      "valid_tts": "TTS validity",
-      "shift_span": "Shift span (decades)"
-    },
-
-    "models": {
-      "best_model": "Best model",
-      "parameters": "Model parameters",
-      "r2": "R²",
-      "fit_range": "Fit range",
-      "model_limits": "Model validity window"
-    },
-
-    "structural": {
-      "eta0": "Zero-shear viscosity (η₀)",
-      "gn0": "Plateau modulus (G_N⁰)",
-      "crossover": "Crossover frequency",
-      "relaxation_time": "Relaxation time",
-      "terminal_slope": "Terminal slope"
-    },
-
-    "quality": {
-      "overall": "Overall quality score",
-      "fit_quality": "Fit quality",
-      "tts_valid": "TTS valid",
-      "physical_params": "Physical parameter check",
-      "consistency": "Internal consistency"
-    },
-
-    "interpretation": {
-      "process_window": "Processing window",
-      "temperature_sensitivity": "Temperature sensitivity",
-      "pressure_risk": "Pressure risk",
-      "stability": "Melt stability",
-      "batch_variation": "Batch variation indicator"
-    },
-
-    "warnings": {
-      "tts_invalid": "TTS not fully valid — results per temperature are more reliable",
-      "poor_fit": "Model fit quality is low",
-      "non_physical": "Non-physical parameters detected",
-      "limited_range": "Limited temperature range",
-      "extrapolation": "Extrapolation outside measured range"
-    },
-
-    "summary_title": "🧾 Executive Summary",
-    "summary_text": "The material shows {behavior_summary}. The fitted model is {model}. Parameter confidence is {confidence_level}. Processing risk level is {risk_level}.",
-
     "footer": {
-      "generated": "Generated on",
-      "software": "Generated with RheoApp",
-      "note": "This report is an engineering aid and does not replace material qualification testing."
+      "version": "RheoApp Version 1.0.0",
+      "sidebar_divider": "---"
     }
   }
 }

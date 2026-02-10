@@ -39,7 +39,6 @@ st.set_page_config(
 )
 
 # --- LANGUAGE SWITCHER IN SIDEBAR ---
-st.sidebar.markdown("---")
 col1, col2 = st.sidebar.columns(2)
 
 with col1:
