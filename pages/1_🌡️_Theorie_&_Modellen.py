@@ -600,6 +600,7 @@ with tab_calc:
 
 # --- FOOTER ---
 # --- LANGUAGE SWITCHER IN SIDEBAR ---
+st.sidebar.markdown("---")
 col1, col2 = st.sidebar.columns(2)
 with col1:
     if st.button("🇳🇱 NL", use_container_width=True,
@@ -613,5 +614,5 @@ with col2:
         if st.session_state.lang != 'EN':
             st.session_state.lang = 'EN'
             st.rerun()
-st.markdown("---")
+st.sidebar.markdown("---")
 st.sidebar.caption("RheoApp - v1.0")
