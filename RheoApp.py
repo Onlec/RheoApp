@@ -7,6 +7,7 @@ from scipy.optimize import minimize, curve_fit
 from scipy.interpolate import interp1d, UnivariateSpline
 from io import BytesIO
 import json
+import seaborn as sns
 
 
 # --- LANGUAGE & TRANSLATIONS SETUP ---
@@ -32,17 +33,47 @@ st.set_page_config(page_title=texts.get("title", "RheoApp"), layout="wide")
 st.title(texts.get("title", "RheoApp - TPU Rheology Expert Tool"))
 st.caption(texts.get("caption", ""))
 
-# DISCLAIMER
 with st.expander(texts.get("disclaimer_title", "⚠️ Disclaimer")):
     st.warning(texts.get("disclaimer_text", ""))
 
-# Custom CSS
 st.markdown("""
     <style>
     .reportview-container .main .block-container { padding-top: 2rem; }
     .expert-note { background-color: #f0f2f6; padding: 15px; border-left: 5px solid #ff4b4b; border-radius: 5px; margin-bottom: 20px; }
     </style>
     """, unsafe_allow_html=True)
+
+# --- GLOBALE GRAFIEK STIJL ---
+sns.set_theme(style="whitegrid", palette="deep")
+plt.rcParams.update({
+    'figure.facecolor': 'white',
+    'figure.dpi': 110,
+    'axes.facecolor': '#f8f8f8',
+    'axes.edgecolor': '#cccccc',
+    'axes.labelsize': 11,
+    'axes.labelweight': 'bold',
+    'axes.titlesize': 12,
+    'axes.titleweight': 'bold',
+    'axes.spines.top': False,
+    'axes.spines.right': False,
+    'grid.color': '#e5e5e5',
+    'grid.linewidth': 0.8,
+    'grid.alpha': 1.0,
+    'xtick.labelsize': 10,
+    'ytick.labelsize': 10,
+    'xtick.direction': 'in',
+    'ytick.direction': 'in',
+    'xtick.color': '#555555',
+    'ytick.color': '#555555',
+    'lines.linewidth': 1.8,
+    'lines.markersize': 5,
+    'legend.fontsize': 9,
+    'legend.framealpha': 0.9,
+    'legend.edgecolor': '#dddddd',
+    'legend.fancybox': True,
+    'font.family': 'sans-serif',
+    'font.size': 10,
+})
 
 
 # --- FUNCTIES ---
@@ -196,6 +227,7 @@ def find_all_crossovers(omega, Gp, Gpp):
             modulus_co = 10**(log_gp[i] + frac * (log_gp[i+1] - log_gp[i]))
             crossovers.append({"omega": omega_co, "modulus": modulus_co})
     return crossovers
+
 
 # --- SIDEBAR: CONTROLS ---
 st.sidebar.title(texts.get("sidebar_title", "🎛️ Control Panel"))
@@ -433,6 +465,9 @@ if uploaded_file:
 
         # ============================================================
         # TAB 1: MASTER CURVE
+        # fig1: G' en G'' vs verschoven frequentie (log-log)
+        # fig_s: Smoothed η* vs verschoven frequentie
+        # fig2: Shift factor trend (log aT vs T)
         # ============================================================
         with tab1:
             st.subheader(texts.get("tab1_title", "Master Curve at {temp}°C").format(temp=ref_temp))
@@ -441,26 +476,26 @@ if uploaded_file:
             col_m1, col_m2 = st.columns([2, 1])
 
             with col_m1:
+                # --- fig1: Master Curve G' en G'' ---
                 fig1, ax1 = plt.subplots(figsize=(10, 6))
                 for t, color in zip(selected_temps, colors):
                     d = df[df['T_group'] == t].copy()
                     at = 10**st.session_state.shifts[t]
-                    ax1.loglog(d['omega'] * at, d['Gp'], 'o-', color=color, label=f"{int(t)}°C G'", markersize=4)
-                    ax1.loglog(d['omega'] * at, d['Gpp'], 'x--', color=color, alpha=0.3, markersize=3)
+                    ax1.loglog(d['omega'] * at, d['Gp'], 'o-',
+                               color=color, label=f"{int(t)}°C G'")
+                    ax1.loglog(d['omega'] * at, d['Gpp'], 'x--',
+                               color=color, alpha=0.5, label=f"{int(t)}°C G''")
                 ax1.set_xlabel("ω·aT (rad/s)")
                 ax1.set_ylabel("Modulus (Pa)")
-                ax1.legend(ncol=2, fontsize=8)
-                ax1.grid(True, alpha=0.1)
+                ax1.legend(ncol=2, title="Temperatuur")
+                ax1.grid(True, which="both")
                 st.pyplot(fig1)
                 plt.close()
 
                 st.subheader(texts.get("smooth_export", "💾 Smooth Export (Optional)"))
                 st.caption(texts.get("smooth_caption", ""))
 
-                s_val = st.slider(
-                    texts.get("smooth_strength", "Smoothing Strength"),
-                    0.0, 2.0, 0.4
-                )
+                s_val = st.slider(texts.get("smooth_strength", "Smoothing Strength"), 0.0, 2.0, 0.4)
                 st.warning(texts.get("smooth_warning", ""))
 
                 log_w = np.log10(m_df['w_s'])
@@ -469,13 +504,16 @@ if uploaded_file:
                 w_new = np.logspace(log_w.min(), log_w.max(), 50)
                 eta_new = 10**spl(np.log10(w_new))
 
-                fig_s, ax_s = plt.subplots()
-                ax_s.loglog(m_df['w_s'], m_df['eta_s'], 'k.', alpha=0.1, label='Raw data')
-                ax_s.loglog(w_new, eta_new, 'r-', linewidth=2, label='Smoothed')
+                # --- fig_s: Smoothed viscositeit ---
+                fig_s, ax_s = plt.subplots(figsize=(10, 5))
+                ax_s.loglog(m_df['w_s'], m_df['eta_s'], 'o',
+                            color='#aaaaaa', alpha=0.4, markersize=3, label='Raw data')
+                ax_s.loglog(w_new, eta_new, '-',
+                            color='#e63946', linewidth=2.5, label='Smoothed')
                 ax_s.set_xlabel("ω·aT (rad/s)")
                 ax_s.set_ylabel("η* (Pa·s)")
                 ax_s.legend()
-                ax_s.grid(True, alpha=0.3)
+                ax_s.grid(True, which="both")
                 st.pyplot(fig_s)
                 plt.close()
 
@@ -483,10 +521,14 @@ if uploaded_file:
                 st.write(f"**{texts.get('shift_trend_title', '📊 Shift Factor Trend')}**")
                 t_plot = sorted(selected_temps)
                 s_plot = [st.session_state.shifts[t] for t in t_plot]
-                fig2, ax2 = plt.subplots()
-                ax2.plot(t_plot, s_plot, 's-', color='red')
+
+                # --- fig2: Shift factor trend ---
+                fig2, ax2 = plt.subplots(figsize=(5, 4))
+                ax2.plot(t_plot, s_plot, 's-', color='#e63946', linewidth=2)
+                ax2.axhline(0, color='#aaaaaa', linestyle='--', linewidth=1)
                 ax2.set_xlabel("T (°C)")
                 ax2.set_ylabel("log(aT)")
+                ax2.grid(True)
                 st.pyplot(fig2)
                 plt.close()
                 st.info(texts.get("shift_trend_info", ""))
@@ -499,6 +541,7 @@ if uploaded_file:
 
         # ============================================================
         # TAB 2: VAN GURP-PALMEN
+        # fig3: δ vs |G*| (semi-log)
         # ============================================================
         with tab2:
             st.subheader(texts.get("tab2_title", "Van Gurp-Palmen (vGP) Structure Analysis"))
@@ -514,8 +557,8 @@ if uploaded_file:
             ax3.set_xlabel("|G*| (Pa)")
             ax3.set_ylabel("δ (°)")
             ax3.set_ylim(0, 95)
-            ax3.grid(True, which="both", alpha=0.2)
-            ax3.legend(title="T (°C)")
+            ax3.grid(True, which="both")
+            ax3.legend(title="T (°C)", ncol=2)
             st.pyplot(fig3)
             plt.close()
 
@@ -523,7 +566,6 @@ if uploaded_file:
                 st.warning(texts.get("vgp_warning", ""))
 
             st.markdown(f"### {texts.get('morphology_title', '🔍 Morphological Diagnosis')}")
-
             morph_col1, morph_col2 = st.columns(2)
             with morph_col1:
                 st.success(texts.get("morphology_good", ""))
@@ -532,6 +574,7 @@ if uploaded_file:
 
         # ============================================================
         # TAB 3: TAN DELTA
+        # fig_tan: tan δ vs frequentie (semi-log)
         # ============================================================
         with tab3:
             st.subheader(texts.get("tab3_title", "Loss Tangent (tan δ) - Relaxation Spectrum"))
@@ -542,11 +585,12 @@ if uploaded_file:
                 d = df[df['T_group'] == t]
                 tan_d = d['Gpp'] / d['Gp']
                 ax_tan.semilogx(d['omega'], tan_d, 'o-', color=color, label=f"{int(t)}°C")
-            ax_tan.axhline(1, color='red', linestyle='--', alpha=0.5, label="G' = G''")
+            ax_tan.axhline(1, color='#e63946', linestyle='--', linewidth=1.5,
+                           label="tan δ = 1 (G' = G'')")
             ax_tan.set_xlabel("ω (rad/s)")
-            ax_tan.set_ylabel("tan δ")
-            ax_tan.legend(ncol=2, fontsize=8)
-            ax_tan.grid(True, alpha=0.2)
+            ax_tan.set_ylabel("tan δ (-)")
+            ax_tan.legend(ncol=2, title="Temperatuur")
+            ax_tan.grid(True)
             st.pyplot(fig_tan)
             plt.close()
 
@@ -555,6 +599,7 @@ if uploaded_file:
 
         # ============================================================
         # TAB 4: THERMAL
+        # fig_t: log(aT) vs T met Arrhenius, WLF, VFT fits
         # ============================================================
         with tab4:
             st.subheader(texts.get("tab4_title", "Thermal Characterization: Arrhenius, WLF & VFT"))
@@ -564,21 +609,20 @@ if uploaded_file:
             with col_t1:
                 fig_t, ax_t = plt.subplots(figsize=(10, 6))
                 ax_t.scatter(selected_temps, log_at_global, color='black',
-                             label='Shift Factors (Data)', s=80, zorder=5)
-
-                ax_t.plot(t_smooth, y_arr, 'r--', label='Arrhenius', alpha=0.6)
-                ax_t.plot(t_smooth, y_wlf, 'b-', label='WLF', linewidth=2)
-
+                             label='Shift Factors (data)', s=80, zorder=5)
+                ax_t.plot(t_smooth, y_arr, '--', color='#e63946',
+                          linewidth=2, label='Arrhenius')
+                ax_t.plot(t_smooth, y_wlf, '-', color='#457b9d',
+                          linewidth=2.5, label='WLF')
                 if vft_success:
                     ax_t.plot(t_smooth, vft_model(t_smooth_k, *popt_vft),
-                              'g:', label='VFT', linewidth=3)
-
-                ax_t.axvline(t_softening, color='orange', linestyle='-.',
-                             alpha=0.5, label='Softening Transition')
+                              ':', color='#2a9d8f', linewidth=2.5, label='VFT')
+                ax_t.axvline(t_softening, color='#f4a261', linestyle='-.',
+                             linewidth=1.5, label=f'Softening (~{t_softening:.0f}°C)')
                 ax_t.set_xlabel("T (°C)")
                 ax_t.set_ylabel("log(aT)")
                 ax_t.legend()
-                ax_t.grid(True, alpha=0.2)
+                ax_t.grid(True)
                 st.pyplot(fig_t)
                 plt.close()
 
@@ -598,15 +642,12 @@ if uploaded_file:
 
                 if ref_temp < t_softening:
                     st.error(texts.get("tab4_critical_warning", "").format(
-                        ref_temp=ref_temp,
-                        t_soft=t_softening,
-                        t_max=max(selected_temps),
-                        t_req=t_softening + 10
+                        ref_temp=ref_temp, t_soft=t_softening,
+                        t_max=max(selected_temps), t_req=t_softening + 10
                     ))
                 else:
                     st.success(texts.get("tab4_success", "").format(
-                        ref_temp=ref_temp,
-                        t_soft=t_softening
+                        ref_temp=ref_temp, t_soft=t_softening
                     ))
 
                 if r2_final > 0.98:
@@ -616,6 +657,8 @@ if uploaded_file:
 
         # ============================================================
         # TAB 5: TTS VALIDATION
+        # fig_h: Han plot G' vs G'' (log-log)
+        # fig_c: Cole-Cole η'' vs η'
         # ============================================================
         with tab5:
             st.subheader(texts.get("tab5_title", "TTS Validation via Han & Cole-Cole Plots"))
@@ -624,28 +667,30 @@ if uploaded_file:
 
             with cv1:
                 st.write(texts.get("tab5_han_title", "1️⃣ Han Plot: G' vs G''"))
-                fig_h, ax_h = plt.subplots()
+                fig_h, ax_h = plt.subplots(figsize=(6, 5))
                 for t, color in zip(selected_temps, colors):
                     d = df[df['T_group'] == t]
-                    ax_h.loglog(d['Gpp'], d['Gp'], 'o', color=color, alpha=0.6, label=f"{int(t)}°C")
+                    ax_h.loglog(d['Gpp'], d['Gp'], 'o-', color=color,
+                                alpha=0.8, label=f"{int(t)}°C")
                 ax_h.set_xlabel("G'' (Pa)")
                 ax_h.set_ylabel("G' (Pa)")
-                ax_h.legend(fontsize=7)
-                ax_h.grid(True, alpha=0.3)
+                ax_h.legend(title="T (°C)", ncol=2)
+                ax_h.grid(True, which="both")
                 st.pyplot(fig_h)
                 plt.close()
                 st.caption(texts.get("tab5_han_caption", ""))
 
             with cv2:
                 st.write(texts.get("tab5_cole_title", "2️⃣ Cole-Cole Plot: η'' vs η'"))
-                fig_c, ax_c = plt.subplots()
+                fig_c, ax_c = plt.subplots(figsize=(6, 5))
                 for t, color in zip(selected_temps, colors):
                     d = df[df['T_group'] == t]
-                    ax_c.plot(d['Gpp'] / d['omega'], d['Gp'] / d['omega'], 'o-', color=color, label=f"{int(t)}°C")
+                    ax_c.plot(d['Gpp'] / d['omega'], d['Gp'] / d['omega'],
+                              'o-', color=color, label=f"{int(t)}°C")
                 ax_c.set_xlabel("η' (Pa·s)")
                 ax_c.set_ylabel("η'' (Pa·s)")
-                ax_c.legend(fontsize=7)
-                ax_c.grid(True, alpha=0.3)
+                ax_c.legend(title="T (°C)", ncol=2)
+                ax_c.grid(True)
                 st.pyplot(fig_c)
                 plt.close()
                 st.caption(texts.get("tab5_cole_caption", ""))
@@ -687,6 +732,7 @@ if uploaded_file:
 
         # ============================================================
         # TAB 6: MOLECULAR ANALYSIS
+        # fig_ext: η* vs verschoven frequentie met Cross model fit
         # ============================================================
         with tab6:
             st.header(texts.get("tab6_title", "⚛️ Molecular Analysis & Process Parameters"))
@@ -709,7 +755,6 @@ if uploaded_file:
 
             if not np.isnan(eta0):
                 st.markdown(f"### {texts.get('tab6_mw_title', '🧬 Molecular Weight Relationship')}")
-
                 mw_col1, mw_col2 = st.columns([2, 1])
                 with mw_col1:
                     st.info(f"""
@@ -736,19 +781,25 @@ if uploaded_file:
 
             st.divider()
             st.subheader("Extrapolatie naar η₀ (Cross Model)")
-            fig_ext, ax_ext = plt.subplots()
-            ax_ext.loglog(m_df['w_s'], m_df['eta_s'], 'ko', alpha=0.3, label='Meetdata')
+
+            fig_ext, ax_ext = plt.subplots(figsize=(10, 5))
+            ax_ext.loglog(m_df['w_s'], m_df['eta_s'], 'o',
+                          color='#aaaaaa', alpha=0.4, markersize=3, label='Meetdata')
             if fit_success and not np.isnan(eta0):
-                w_fit = np.logspace(np.log10(m_df['w_s'].min()) - 2, np.log10(m_df['w_s'].max()), 100)
+                w_fit = np.logspace(np.log10(m_df['w_s'].min()) - 2,
+                                    np.log10(m_df['w_s'].max()), 100)
                 eta_fit = cross_model(w_fit, fit_params[0], fit_params[1], fit_params[2])
-                ax_ext.loglog(w_fit, eta_fit, 'r--', linewidth=2, label='Cross Model Fit')
-                ax_ext.axhline(eta0, color='red', linestyle=':', label=f'η₀ = {eta0:.1e} Pa·s')
+                ax_ext.loglog(w_fit, eta_fit, '--', color='#e63946',
+                              linewidth=2.5, label='Cross Model Fit')
+                ax_ext.axhline(eta0, color='#457b9d', linestyle=':',
+                               linewidth=2, label=f'η₀ = {eta0:.1e} Pa·s')
                 st.write(f"**Gevonden η₀:** {eta0:.2e} Pa·s | **Karakteristieke tijd (τ):** {fit_params[1]:.3f} s")
             else:
                 st.warning("⚠️ η₀ extrapolatie mislukt.")
             ax_ext.set_xlabel("ω·aT (rad/s)")
             ax_ext.set_ylabel("η* (Pa·s)")
             ax_ext.legend()
+            ax_ext.grid(True, which="both")
             st.pyplot(fig_ext)
             plt.close()
 
@@ -770,20 +821,15 @@ if uploaded_file:
 
             dashboard_data = [
                 {"Categorie": "Thermisch", "Parameter": "Activatie Energie (Ea)",
-                 "Waarde": f"{ea_final:.2f}", "Eenheid": "kJ/mol",
-                 "Info": "Vloei-activatie energie"},
+                 "Waarde": f"{ea_final:.2f}", "Eenheid": "kJ/mol", "Info": "Vloei-activatie energie"},
                 {"Categorie": "Thermisch", "Parameter": "WLF C₁",
-                 "Waarde": f"{wlf_c1:.2f}", "Eenheid": "-",
-                 "Info": "Vrije volume parameter"},
+                 "Waarde": f"{wlf_c1:.2f}", "Eenheid": "-", "Info": "Vrije volume parameter"},
                 {"Categorie": "Thermisch", "Parameter": "WLF C₂",
-                 "Waarde": f"{wlf_c2:.2f}", "Eenheid": "K",
-                 "Info": "Temp-afstand tot Tg"},
+                 "Waarde": f"{wlf_c2:.2f}", "Eenheid": "K", "Info": "Temp-afstand tot Tg"},
                 {"Categorie": "Thermisch", "Parameter": "VFT T∞ (Vogel Temp)",
-                 "Waarde": f"{t_inf_c:.1f}", "Eenheid": "°C",
-                 "Info": t_inf_info},
+                 "Waarde": f"{t_inf_c:.1f}", "Eenheid": "°C", "Info": t_inf_info},
                 {"Categorie": "Thermisch", "Parameter": "Geschatte Tg",
-                 "Waarde": f"{t_inf_c + 50:.1f}", "Eenheid": "°C",
-                 "Info": "T∞ + 50K regel voor TPU"},
+                 "Waarde": f"{t_inf_c + 50:.1f}", "Eenheid": "°C", "Info": "T∞ + 50K regel voor TPU"},
                 {"Categorie": "Viscositeit", "Parameter": "Zero Shear Viscosity (η₀)",
                  "Waarde": f"{eta0:.2e}" if not np.isnan(eta0) else "N/A", "Eenheid": "Pa·s",
                  "Info": "Processtabiliteits-indicator"},
@@ -797,14 +843,11 @@ if uploaded_file:
                  "Waarde": f"{gn0:.2e}" if not np.isnan(gn0) else "N/A", "Eenheid": "Pa",
                  "Info": gn0_info},
                 {"Categorie": "Structuur", "Parameter": "Crossover Punten",
-                 "Waarde": f"{num_cos}", "Eenheid": "-",
-                 "Info": "Aantal G'=G'' kruisingen"},
+                 "Waarde": f"{num_cos}", "Eenheid": "-", "Info": "Aantal G'=G'' kruisingen"},
                 {"Categorie": "Validatie", "Parameter": "Arrhenius R²",
-                 "Waarde": f"{r2_final:.4f}", "Eenheid": "-",
-                 "Info": "Lineaire fit kwaliteit"},
+                 "Waarde": f"{r2_final:.4f}", "Eenheid": "-", "Info": "Lineaire fit kwaliteit"},
                 {"Categorie": "Validatie", "Parameter": "Adjusted R²",
-                 "Waarde": f"{r2_adj:.4f}", "Eenheid": "-",
-                 "Info": "R² gecorrigeerd voor # datapunten"},
+                 "Waarde": f"{r2_adj:.4f}", "Eenheid": "-", "Info": "R² gecorrigeerd voor # datapunten"},
             ]
             st.table(pd.DataFrame(dashboard_data))
 
@@ -870,8 +913,7 @@ if uploaded_file:
             col_ex1.download_button(
                 texts.get("export_params", "📊 Parameters CSV"),
                 summ_df.to_csv(index=False).encode('utf-8'),
-                f"{sample_name}_Parameters.csv",
-                "text/csv"
+                f"{sample_name}_Parameters.csv", "text/csv"
             )
 
             shift_export_df = pd.DataFrame({
@@ -882,16 +924,14 @@ if uploaded_file:
             col_ex2.download_button(
                 texts.get("export_shifts", "🕒 Shift Factors CSV"),
                 shift_export_df.to_csv(index=False).encode('utf-8'),
-                f"{sample_name}_ShiftFactors.csv",
-                "text/csv"
+                f"{sample_name}_ShiftFactors.csv", "text/csv"
             )
 
             if not co_df.empty:
                 col_ex3.download_button(
                     texts.get("export_crossovers", "⚖️ Crossovers CSV"),
                     co_df.to_csv(index=False).encode('utf-8'),
-                    f"{sample_name}_Crossovers.csv",
-                    "text/csv"
+                    f"{sample_name}_Crossovers.csv", "text/csv"
                 )
 
             gewenste_kolommen = {
@@ -907,8 +947,7 @@ if uploaded_file:
             col_ex4.download_button(
                 texts.get("export_mastercurve", "📈 Master Curve CSV"),
                 master_export_df.to_csv(index=False).encode('utf-8'),
-                f"{sample_name}_MasterCurve.csv",
-                "text/csv"
+                f"{sample_name}_MasterCurve.csv", "text/csv"
             )
 
     else:
@@ -916,11 +955,9 @@ if uploaded_file:
 
 else:
     st.info(texts.get("upload_prompt", "👆 Upload a frequency sweep CSV/TXT file to begin."))
-
     with st.expander(texts.get("instructions_title", "ℹ️ User Instructions")):
         st.markdown(texts.get("instructions", ""))
 
-# --- FOOTER ---
 # --- LANGUAGE SWITCHER IN SIDEBAR ---
 st.sidebar.markdown("---")
 col1, col2 = st.sidebar.columns(2)
