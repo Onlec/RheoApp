@@ -25,6 +25,18 @@ all_translations = load_translations()
 texts = all_translations.get(st.session_state.lang, all_translations["NL"]).get("theory_models", {})
 
 
+all_translations = load_translations()
+
+# DEBUG - tijdelijk toevoegen
+import os
+st.sidebar.write("Werkdirectory:", os.getcwd())
+st.sidebar.write("Bestand bestaat:", os.path.exists("translations.json"))
+st.sidebar.write("Lang:", st.session_state.lang)
+st.sidebar.write("Main_app aanwezig:", "main_app" in all_translations.get("NL", {}))
+
+texts = all_translations.get(st.session_state.lang, all_translations["NL"]).get("main_app", {})
+
+
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
     page_title=texts.get("page_title", "Theorie & Modellen - RheoApp"),
